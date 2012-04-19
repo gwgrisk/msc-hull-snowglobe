@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<Effects>
+	<Effect name="textured-phong" autobuild="true">
+
+		<Shader type="vertex" name="textured-phong.vert" />
+		<Shader type="fragment" name="textured-phong.frag" />
+
+		<InputAttributes>
+			<VertexDescription type="CustomVertex" stride="72" />
+			<attrib fieldname="VertexPosition" size="3" offset="0" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexTexCoord" size="2" offset="6" />
+		</InputAttributes>
+
+	</Effect>
+
+	<Effect name="lake" autobuild="true">
+
+		<Shader type="vertex" name="lake.vert" />
+		<Shader type="fragment" name="lake.frag" />
+
+		<InputAttributes>
+			<VertexDescription type="CustomVertex" stride="72" />
+			<attrib fieldname="VertexPosition" size="3" offset="0" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexTexCoord" size="2" offset="6" />
+		</InputAttributes>
+
+	</Effect>
+
+</Effects>
