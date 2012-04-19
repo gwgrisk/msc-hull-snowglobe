@@ -13,14 +13,13 @@ out vec4 FragColour;
 
 void main() 
 {
-	vec4 alpha = texture( texAlpha, TexCoord );
-	
-	FragColour = vec4(1.0, 1.0, 1.0, 1.0);
+	vec4 alpha = texture( texAlpha, TexCoord );		
 
 	if( alpha.r < 0.15 )
-		discard;	
+		discard;
 
 	vec4 colour = texture( tex, TexCoord );
-	colour.a	= 0.9;
+	colour.a = 0.3;
 	FragColour	= colour;
+	
 }

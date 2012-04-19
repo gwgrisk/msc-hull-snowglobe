@@ -58,6 +58,7 @@ const float g_2Pi = 6.28318f;
 float Wave( int n, float x, float y )
 {
 	float rFrequency	= g_2Pi / rWavelength[n];
+	
 	float rPhase		= rVelocity[n] * rFrequency;
 	float rTheta		= dot( vDirection[n], vec2(x, y) );
 
@@ -113,7 +114,7 @@ void main()
 	vec4 Position	= vec4(VertexPosition, 1.0);
 	
 	Position.y		+= WaveHeight(Position.x, Position.z);
-	Position.x		+= WaveHeight(Position.y, Position.z);
+	Position.x		-= WaveHeight(Position.y, Position.z);
 	Position.z		+= WaveHeight(Position.x, Position.y);
 	Position		= vec4(Position.xyz / Position.w, 1.0);
 

@@ -510,7 +510,7 @@ HRESULT Lake::PreRender()
 
 	// execute the shader program
 	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );	
 
 	return S_OK;
 }
