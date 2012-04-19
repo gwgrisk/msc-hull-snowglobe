@@ -113,9 +113,9 @@ void main()
 	vec4 Position	= vec4(VertexPosition, 1.0);
 	
 	Position.y		+= WaveHeight(Position.x, Position.z);
-	//Position.x		+= WaveHeight(Position.y, Position.z);
-	//Position.z		+= WaveHeight(Position.x, Position.y);
-	// Position		= vec4(Position.xyz / Position.w, 1.0);
+	Position.x		+= WaveHeight(Position.y, Position.z);
+	Position.z		+= WaveHeight(Position.x, Position.y);
+	Position		= vec4(Position.xyz / Position.w, 1.0);
 
 	// Texture co-ordinate (passed to frag shader)
 	TexCoord = VertexTexCoord;

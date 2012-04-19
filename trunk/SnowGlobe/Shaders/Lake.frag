@@ -20,5 +20,7 @@ void main()
 	if( alpha.r < 0.15 )
 		discard;	
 
-	FragColour = texture( tex, TexCoord );	
+	vec4 colour = texture( tex, TexCoord );
+	colour.a	= 0.9;
+	FragColour	= colour;
 }

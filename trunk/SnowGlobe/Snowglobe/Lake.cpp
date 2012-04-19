@@ -55,7 +55,7 @@ Lake::Lake(	SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_sNormalMap		( sNormalMap ),
 	m_rWidth			( rWidth ),
 	m_rHeight			( rHeight ),
-	m_nNumWaves			( 4 )
+	m_nNumWaves			( 2 )
 {
 	Initialize();
 }
@@ -111,6 +111,13 @@ bool Lake::Initialize()
 
 	glex::Load();
 		
+	if( ! InitializeWaveData() )
+	{
+		AppLog::Ref().LogMsg( "%s failed to initialize wave data", __FUNCTION__ );
+		Uninitialize();
+		return false;
+	}
+
 	if( ! InitializeGeometry() )
 	{
 		AppLog::Ref().LogMsg( "%s failed to initialize geometry", __FUNCTION__ );
@@ -323,7 +330,39 @@ bool Lake::InitializeVao()
 
 	return true;
 }
+bool Lake::InitializeWaveData()
+{
+	if( m_nNumWaves <= 0 )
+		return false;
 
+	using AntiMatter::g_Pi;
+	using std::variate_generator;
+	using std::mt19937;
+	using std::uniform_real_distribution;
+
+	typedef mt19937										Engine;
+	typedef uniform_real_distribution<float>			Distribution;
+	typedef variate_generator< Engine, Distribution >	Generator;	
+
+	Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );	
+
+	m_rAmplitude.resize(m_nNumWaves);
+	m_rWavelength.resize(m_nNumWaves);
+	m_rVelocity.resize(m_nNumWaves);
+	m_vDirection.resize(m_nNumWaves);
+
+	for( int n = 0; n < m_nNumWaves; n ++ )
+	{
+		float theta			= glm::mix( 0.0f, 2.0f * g_Pi, r() );
+
+		m_rAmplitude[n]		= 0.45f/(n+1);
+		m_rWavelength[n]	= 16.0f * g_Pi / (n+1);
+		m_rVelocity[n]		= 8.3f * n;
+		m_vDirection[n]		= glm::vec2( sinf(theta), -cosf(theta) );		
+	}
+
+	return true;
+}
 bool Lake::GetShader()
 {
 	using std::string;
@@ -343,19 +382,6 @@ bool Lake::GetShader()
 void Lake::SetUniforms()
 {
 	// Assign uniform variables
-	/*
-	uniform float	rSimTime;
-	uniform int		nNumWaves;
-	uniform float	rWaterHeight;
-
-	uniform float	rAmplitude[8];
-	uniform float	rWavelength[8];
-	uniform float	rVelocity[8];
-	uniform vec2	vDirection[8];
-
-	uniform mat4	mMVP;
-	uniform mat4	mNormal;
-	*/
 
 	if( !  m_pEffect )
 		return;
@@ -363,52 +389,12 @@ void Lake::SetUniforms()
 	using namespace glm;
 	using namespace AntiMatter;
 	using namespace std;
-	using AntiMatter::g_Pi;
-
-	using std::variate_generator;
-	using std::mt19937;
-	using std::uniform_real_distribution;
-
-	typedef mt19937										Engine;
-	typedef uniform_real_distribution<float>			Distribution;
-	typedef variate_generator< Engine, Distribution >	Generator;
-
-	Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );	
-
-	m_nNumWaves = 2;
-
-	// wave values
-	for( int v = 0; v < m_nNumWaves; ++ v )
-	{		
-		stringstream ssAmplitude;
-		ssAmplitude << "rAmplitude[" << v << "]";
-		m_pEffect->AssignUniformFloat( ssAmplitude.str(), 1.5f / (v+1) );
-
-		stringstream ssWavelength;
-		ssWavelength << "rWavelength[" << v << "]";
-		float rWavelength = (16.47f * g_Pi) / (v+1);
-		m_pEffect->AssignUniformFloat( ssWavelength.str(), rWavelength );
-
-		stringstream ssVelocity;		
-		ssVelocity << "rVelocity[" << v << "]";
-		float rScale = v % 2 == 0 ? 2.0f : 4.0f ;
-		m_pEffect->AssignUniformFloat( ssVelocity.str(), rScale + 2*v );
-				
-		stringstream ssDirection;
-		float		theta = glm::mix( -2.0f * g_Pi, 2.0f * g_Pi, r() );
-		glm::vec2	vDirection( sinf(theta), cosf(theta) );
-		ssDirection << "vDirection[" << v << "]";
-		m_pEffect->AssignUniformVec2( ssDirection.str(), vDirection );
-	}
-
-	float rSimTime = SeasonalTimeline::Ref().SeasonTimeline();
-
-	m_pEffect->AssignUniformFloat(	string("rSimTime"),			rSimTime );	
+	
+	m_pEffect->AssignUniformFloat(	string("rSimTime"),			SeasonalTimeline::Ref().SeasonTimeline() );	
 	m_pEffect->AssignUniformInt(	string("nNumLights"),		4 );
 
 	m_pEffect->AssignUniformInt(	string("nNumWaves"),		m_nNumWaves );
 	m_pEffect->AssignUniformFloat(	string("rWaterHeight"),		m_rHeight );
-
 
 	// vViewPosition (camera position transformed into view space)
 	vec3 vCamPos = vec3(Graph()->Cam().V() * m_Data.W() * vec4( Graph()->Cam().Pos(), 1.0));
@@ -435,6 +421,26 @@ void Lake::SetUniforms()
 	m_pEffect->AssignUniformFloat( string("material.rShininess"),	m_material.Shininess() );
 
 	AppLog::Ref().OutputGlErrors();	
+
+	// wave values
+	for( int v = 0; v < m_nNumWaves; ++ v )
+	{		
+		stringstream ssAmplitude;
+		ssAmplitude << "rAmplitude[" << v << "]";
+		m_pEffect->AssignUniformFloat( ssAmplitude.str(), m_rAmplitude[v] );
+
+		stringstream ssWavelength;
+		ssWavelength << "rWavelength[" << v << "]";
+		m_pEffect->AssignUniformFloat( ssWavelength.str(), m_rWavelength[v] );
+
+		stringstream ssVelocity;
+		ssVelocity << "rVelocity[" << v << "]";
+		m_pEffect->AssignUniformFloat( ssVelocity.str(), m_rVelocity[v] );
+				
+		stringstream ssDirection;
+		ssDirection << "vDirection[" << v << "]";
+		m_pEffect->AssignUniformVec2( ssDirection.str(), m_vDirection[v] );
+	}
 	
 	// lights ( transformed into view space )
 	vector<Light*> lights = this->Graph()->Lights().Lights();
@@ -462,8 +468,7 @@ void Lake::SetUniforms()
 		m_pEffect->AssignUniformVec3( sLd,			ld );
 		m_pEffect->AssignUniformVec3( sLs,			ls );
 	}
-	/**/
-
+	
 	AppLog::Ref().OutputGlErrors();
 
 }
@@ -504,7 +509,8 @@ HRESULT Lake::PreRender()
 	SetUniforms();
 
 	// execute the shader program
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
 	return S_OK;
 }
