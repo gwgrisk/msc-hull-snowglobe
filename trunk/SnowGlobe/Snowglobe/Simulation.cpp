@@ -290,6 +290,7 @@ void Simulation::OnIdle()
 
 	float rSecsDelta = (float)m_Clock.DeltaTime();	
 
+	SeasonalTimeline::Ref().Update( rSecsDelta );
 	m_Camera.Update( rSecsDelta );
 	m_pScene->Update( rSecsDelta );
 	

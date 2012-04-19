@@ -372,36 +372,43 @@ void Lake::SetUniforms()
 	typedef mt19937										Engine;
 	typedef uniform_real_distribution<float>			Distribution;
 	typedef variate_generator< Engine, Distribution >	Generator;
-/*
+
 	Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );	
+
+	m_nNumWaves = 2;
 
 	// wave values
 	for( int v = 0; v < m_nNumWaves; ++ v )
 	{		
 		stringstream ssAmplitude;
 		ssAmplitude << "rAmplitude[" << v << "]";
-		m_pEffect->AssignUniformFloat( ssAmplitude.str(), 0.5f / (v+1) );
+		m_pEffect->AssignUniformFloat( ssAmplitude.str(), 1.5f / (v+1) );
 
 		stringstream ssWavelength;
 		ssWavelength << "rWavelength[" << v << "]";
-		m_pEffect->AssignUniformFloat( ssWavelength.str(), (8.0f * g_Pi) / (v+1) );
+		float rWavelength = (16.47f * g_Pi) / (v+1);
+		m_pEffect->AssignUniformFloat( ssWavelength.str(), rWavelength );
 
 		stringstream ssVelocity;		
 		ssVelocity << "rVelocity[" << v << "]";
-		m_pEffect->AssignUniformFloat( ssVelocity.str(), 1.0f + 2*v );
+		float rScale = v % 2 == 0 ? 2.0f : 4.0f ;
+		m_pEffect->AssignUniformFloat( ssVelocity.str(), rScale + 2*v );
 				
 		stringstream ssDirection;
-		float		theta = glm::mix( -g_Pi/3.0f, g_Pi/3.0f, r() );
+		float		theta = glm::mix( -2.0f * g_Pi, 2.0f * g_Pi, r() );
 		glm::vec2	vDirection( sinf(theta), cosf(theta) );
 		ssDirection << "vDirection[" << v << "]";
 		m_pEffect->AssignUniformVec2( ssDirection.str(), vDirection );
 	}
 
-	m_pEffect->AssignUniformFloat(	string("rSimTime"),			SeasonalTimeline::Ref().SeasonTimeline() );	
-	m_pEffect->AssignUniformInt(	string("nNumWaves"),		m_nNumWaves );
+	float rSimTime = SeasonalTimeline::Ref().SeasonTimeline();
+
+	m_pEffect->AssignUniformFloat(	string("rSimTime"),			rSimTime );	
 	m_pEffect->AssignUniformInt(	string("nNumLights"),		4 );
+
+	m_pEffect->AssignUniformInt(	string("nNumWaves"),		m_nNumWaves );
 	m_pEffect->AssignUniformFloat(	string("rWaterHeight"),		m_rHeight );
-	*/
+
 
 	// vViewPosition (camera position transformed into view space)
 	vec3 vCamPos = vec3(Graph()->Cam().V() * m_Data.W() * vec4( Graph()->Cam().Pos(), 1.0));

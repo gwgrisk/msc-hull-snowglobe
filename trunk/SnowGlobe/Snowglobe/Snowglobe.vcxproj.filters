@@ -255,12 +255,6 @@
     <None Include="..\assets\256-circle-alphamap.bmp">
       <Filter>Resource Files\Assets</Filter>
     </None>
-    <None Include="..\Shaders\ads-texture.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\alphamap-texture.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\assets\bark_1.jpg">
       <Filter>Resource Files\Assets</Filter>
     </None>
@@ -272,18 +266,6 @@
     </None>
     <None Include="..\assets\bark_2_bump.jpg">
       <Filter>Resource Files\Assets</Filter>
-    </None>
-    <None Include="..\Shaders\basic.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\basic.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="bump.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="bump.vert">
-      <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\Shaders\debug.frag">
       <Filter>Resource Files\Shaders</Filter>
@@ -330,31 +312,10 @@
     <None Include="..\assets\heightfield4.bmp">
       <Filter>Resource Files\Assets</Filter>
     </None>
-    <None Include="globe.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="globe.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\Shaders\Lake.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\Shaders\Lake.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\ml-ads.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\ml-ads.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\old.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\pond.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\pond.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="small.ico">
@@ -367,30 +328,6 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\Shaders\textured-phong.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-bump-textured.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-bump-textured.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-flat.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-flat.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-smooth-textured.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-smooth-textured.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-smooth.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-smooth.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\Shaders\tree-wireframe.frag">
