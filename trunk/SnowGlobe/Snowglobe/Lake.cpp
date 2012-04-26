@@ -177,7 +177,6 @@ void Lake::Uninitialize()
 	// textures
 	m_AlphaMap.Uninitialize();
 	m_TextureMap.Uninitialize();
-	m_NormalMap.Uninitialize();
 
 	// Shader
 	m_pEffect = NULL;
@@ -503,14 +502,13 @@ HRESULT Lake::PreRender()
 	glUseProgram( m_pEffect->Id() );
 	//glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &nSunSub );
 
-	glBindVertexArray( m_nVaoId );
-	m_pVbo->Bind();
+	glBindVertexArray( m_nVaoId );	
 
 	SetUniforms();
 
 	// execute the shader program
-	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );	
+	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );	
 
 	return S_OK;
 }

@@ -1,5 +1,4 @@
 
-#pragma once
 #include "stdafx.h"
 
 #include "Globe.h"
@@ -9,10 +8,12 @@
 #include "VertexClass.h"
 #include "Sphere.h"
 
+#include "EffectMgr.h"
+#include "Effect.h"
+
 #include "ShaderTypes.h"
 #include "ShaderDesc.h"
 #include "ShaderInputAttribute.h"
-#include "ShaderProgram.h"
 
 #include "slowglobe-cfg.h"
 
@@ -22,17 +23,18 @@
 #include <AntiMatter\ShellUtils.h>
 #include <AntiMatter\constants.h>
 
+#include <glm\glm.hpp>
+
 
 Globe::Globe() : 
 	IGraphNode			( NULL, NULL, std::string("globe") ),
-	m_bInitialized		( false ),
-	m_pShaderProgram	( NULL ),	
+	m_pEffect			( NULL ),
+	m_pVbo				( NULL ),
+	m_nVaoId			( 0 ),
+	m_bInitialized		( false ),		
 	m_rRadius			( 10.0f ),
 	m_nStacks			( 10 ),
-	m_nSlices			( 10 ),
-	m_rRotYAngle		( 30.0f ),
-	m_rRotYStep			( 4.0f ),
-	m_rRotYSpeed		( 3.0f )
+	m_nSlices			( 10 )
 {
 	m_bInitialized = Initialize();
 }
@@ -41,15 +43,14 @@ Globe::Globe(	SceneGraph * pGraph, IGraphNode* pParent, const std::string & sId,
 				const std::string & sTexture,
 				const glm::vec4 & vColour ) : 
 	IGraphNode			( pGraph, pParent, sId ),
+	m_pEffect			( NULL ),
+	m_pVbo				( NULL ),
+	m_nVaoId			( 0 ),
 	m_bInitialized		( false ),
-	m_pShaderProgram	( NULL ),
 	m_sTexture			( sTexture ),
 	m_rRadius			( rRadius ),
 	m_nStacks			( nStacks ),
 	m_nSlices			( nSlices ),
-	m_rRotYAngle		( 30.0f ),
-	m_rRotYStep			( 4.0f ),
-	m_rRotYSpeed		( 3.0f ),
 	m_vColour			( vColour )
 {
 	m_bInitialized = Initialize();
@@ -65,36 +66,125 @@ Globe::~Globe()
 	}	
 }
 	
-bool Globe::SetPerVertexColour()
-{
-	// copies the specified colour to each (and every!) vertex!!!
-	// is there _any_ point to this?!
-	CustomVertex* pVertices  =*(m_Sphere.Vertices());
 
-	for( int n = 0; n < m_Sphere.VertCount(); n ++ )
+bool Globe::Initialize()
+{
+	using namespace AntiMatter;
+	using glm::vec3;
+
+	glex::Load();
+
+	if( m_bInitialized )
+		return true;
+		
+	InitializeMaterial();
+
+	if( ! InitializeGeometry() )
 	{
-		pVertices[n].m_colour[0] = m_vColour.r;
-		pVertices[n].m_colour[1] = m_vColour.g;
-		pVertices[n].m_colour[2] = m_vColour.b;
-		pVertices[n].m_colour[3] = m_vColour.a;
+		AppLog::Ref().LogMsg("%s initialize geometry failed for globe object", __FUNCTION__ );
+		return false;
+	}
+	
+	if( ! InitializeTextures() )
+	{
+		AppLog::Ref().LogMsg("%s initialize textures failed for globe object", __FUNCTION__ );
+		return false;
+	}
+	
+	if( ! SetPerVertexColour() )	// can only do this after the geometry has been created
+	{
+		AppLog::Ref().LogMsg("%s initialize vertex colours failed for globe object", __FUNCTION__ );
+		return false;
+	}
+
+	if( ! GetShader() )
+	{
+		AppLog::Ref().LogMsg( "%s effect not available for this geometry", __FUNCTION__ );
+		Uninitialize();
+		return false;
+	}
+	
+	if( ! InitializeVbo( m_Sphere ) )
+	{
+		AppLog::Ref().LogMsg( "%s failed to Create a vertex buffer from supplied geometry", __FUNCTION__ );
+		Uninitialize();
+		return false;
+	}
+
+	if( ! InitializeVao() )
+	{
+		AppLog::Ref().LogMsg( "%s failed to Create a vertex array object", __FUNCTION__ );
+		Uninitialize();
+		return false;
+	}
+
+	m_bInitialized = true;
+	return m_bInitialized;
+}
+void Globe::Uninitialize()
+{
+	if( ! m_bInitialized )
+		return;
+
+	m_bInitialized = false;
+
+	// geometry	
+	m_Sphere.Uninitialize();
+	
+	// material (not necessary)
+
+	// textures
+	m_tex.Uninitialize();
+	
+	// Shader
+	m_pEffect = NULL;
+
+	if( m_pVbo )
+	{
+		delete m_pVbo;
+		m_pVbo = NULL;
+	}
+}
+
+bool Globe::InitializeGeometry()
+{
+	using AntiMatter::AppLog;
+
+	m_Sphere = Sphere( m_rRadius, m_nSlices, m_nStacks );
+
+	if( ! m_Sphere.Initialized() )
+	{
+		AppLog::Ref().LogMsg("Globe::Initialize() failed, geometry primitive Sphere didn't initialize properly");
+		return false;
 	}
 
 	return true;
 }
-bool Globe::SetTexture()
+void Globe::InitializeMaterial()
+{
+	using glm::vec3;
+
+	// material
+	m_material.Ka(vec3(0.1f, 0.1f, 0.1f));
+	m_material.Kd(vec3(0.2f, 0.2f, 0.2f));
+	m_material.Ks(vec3(0.8f, 0.8f, 0.8f));
+	m_material.Shininess( 4.0f );	
+}
+bool Globe::InitializeTextures()
 {
 	using namespace AntiMatter;
 
 	if( m_sTexture.length() == 0 )
 	{
 		glBindTexture( GL_TEXTURE_2D, 0 );
-		return false;
+		return true;
 	}
 
 	if( ! Shell::FileExists( m_sTexture ) )
 	{
-		AppLog::Ref().LogMsg("Globe::Initialize() texture not found");
-		return false;
+		glBindTexture( GL_TEXTURE_2D, 0 );
+		AppLog::Ref().LogMsg("%s texture not found", __FUNCTION__ );
+		return true; // yes, I really mean true!  so what if there's no texture!?
 	}
 	
 	m_tex = Texture( m_sTexture );
@@ -106,123 +196,115 @@ bool Globe::SetTexture()
 
 	return true;
 }
-
-bool Globe::Initialize()
+bool Globe::SetPerVertexColour()
 {
-	using namespace AntiMatter;
-	using glm::vec3;
-
-	if( m_bInitialized )
-		return true;
-
-	SetTexture();
+	// copies the specified colour to each (and every!) vertex!!!
+	// is there _any_ point to this?!
+	CustomVertex* pVertices  =*(m_Sphere.Vertices());
 	
-	// material
-	m_material.Ka(vec3(0.1, 0.1, 0.1));
-	m_material.Kd(vec3(0.2, 0.2, 0.2));
-	m_material.Ks(vec3(0.8, 0.8, 0.8));
-	m_material.Shininess( 4.0f );
-
-
-	m_Sphere = Sphere( m_rRadius, m_nSlices, m_nStacks );
-	if( ! m_Sphere.Initialized() )
+	for( int n = 0; n < m_Sphere.VertCount(); n ++ )
 	{
-		AppLog::Ref().LogMsg("Globe::Initialize() failed, geometry primitive Sphere didn't initialize properly");
-		return false;
+		pVertices[n].m_colour[0] = m_vColour.r;
+		pVertices[n].m_colour[1] = m_vColour.g;
+		pVertices[n].m_colour[2] = m_vColour.b;
+		pVertices[n].m_colour[3] = m_vColour.a;
 	}
-
-	SetPerVertexColour();	// can only do this after the sphere has been created
-
-	if( ! CreateShader() )
-	{
-		AppLog::Ref().LogMsg("Globe::Initialize() failed, CreateShader failed for this object");
-		return false;
-	}
-
-	m_bInitialized = true;
-	return m_bInitialized;
-}
-void Globe::Uninitialize()
-{
-	m_Sphere.Uninitialize();
-
-	if( m_pShaderProgram )
-	{
-		delete m_pShaderProgram;
-		m_pShaderProgram = NULL;
-	}
-
-	m_bInitialized = false;
+	
+	return true;
 }
 
-bool Globe::CreateShader()
+bool Globe::InitializeVbo( IGeometry & geometry )
 {
-	using namespace std;
-	using namespace AntiMatter;
+	using AntiMatter::AppLog;
 
-	// Create a ShaderProgram object and initialize it for this object
-	// This is a candidate for a factory object / scripting
-	vector<ShaderDesc>				vDescs;
-	vector<ShaderInputAttribute>	vArgs;
-	ShaderDesc						VertShaderDesc;
-	ShaderDesc						PixShaderDesc;
-	ShaderInputAttribute			VertPosArg;
-	ShaderInputAttribute			VertNormalArg;
-	ShaderInputAttribute			VertColourArg;
+	m_pVbo = new Vbo<CustomVertex> ( 
+		geometry.VertCount(), 
+		geometry.Vertices(), 
+		geometry.IndexCount(), 
+		geometry.Indices() 
+	);
 
-	VertShaderDesc.sFileName	= g_Cfg.ShadersDir() + string("x-ray.vert");		
-	PixShaderDesc.sFileName		= g_Cfg.ShadersDir() + string("x-ray.frag");
-	//VertShaderDesc.sFileName	= g_Cfg.ShadersDir() + string("ml-ads.vert");		
-	//PixShaderDesc.sFileName	= g_Cfg.ShadersDir() + string("ml-ads.frag");
-
-	VertShaderDesc.nType		= Vertex;
-	PixShaderDesc.nType			= Fragment;		
-
-	VertPosArg.sFieldName		= string("VertexPosition");
-	VertPosArg.nFieldSize		= 3;	// not bytes, num of components
-	VertPosArg.nFieldOffset		= 0;
-	VertPosArg.nStride			= sizeof(CustomVertex);
-
-	VertNormalArg.sFieldName	= string("VertexNormal");
-	VertNormalArg.nFieldSize	= 3;
-	VertNormalArg.nFieldOffset	= 3;
-	VertNormalArg.nStride		= sizeof(CustomVertex);	
-
-	VertColourArg.sFieldName	= string("VertexColor");
-	VertColourArg.nFieldSize	= 4;
-	VertColourArg.nFieldOffset	= 6;
-	VertColourArg.nStride		= sizeof(CustomVertex);	
-
-	vDescs.push_back ( VertShaderDesc );
-	vDescs.push_back ( PixShaderDesc );
-
-	vArgs.push_back ( VertPosArg );
-	vArgs.push_back ( VertNormalArg );
-	vArgs.push_back ( VertColourArg );
-	
-
-	m_pShaderProgram = new ShaderProgram( m_Sphere.Vertices(), m_Sphere.Indices(), m_Sphere.VertCount(), m_Sphere.IndexCount(), vDescs, vArgs );
-	if( ! m_pShaderProgram->Initialized() )
+	if( ! m_pVbo->Initialized() )
 	{
-		delete m_pShaderProgram;
-		m_pShaderProgram = NULL;
+		AppLog::Ref().LogMsg( "%s failed to initialize vertex buffer for object geometry", __FUNCTION__ );
 		return false;
 	}
 
 	return true;
 }
-void Globe::SetShaderArgs()
+bool Globe::InitializeVao()
+{
+	using AntiMatter::AppLog;
+
+	glUseProgram( m_pEffect->Id() );
+
+	glGenVertexArrays( 1, &m_nVaoId );
+	glBindVertexArray( m_nVaoId );	
+
+	glBindBuffer( GL_ARRAY_BUFFER,			m_pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	m_pVbo->IndexId() );
+	
+	// set the VBO attribute pointers
+	GLuint i = 0;
+	
+	for( auto n = m_pEffect->Attributes().begin(); n != m_pEffect->Attributes().end(); n ++ )
+	{	
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer( 
+			i, 
+			n->nFieldSize,
+			GL_FLOAT,
+			GL_FALSE,
+			n->nStride,
+			(GLfloat *) NULL + n->nFieldOffset
+		);
+		
+		i ++;
+	}
+	
+	glBindVertexArray(0);
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	glBindTexture( GL_TEXTURE0, 0 );
+	glBindTexture( GL_TEXTURE1, 0 );
+	
+
+	glUseProgram(0);
+
+	return true;
+}
+
+bool Globe::GetShader()
+{
+	using std::string;
+
+// warning C4482: nonstandard extension used: enum 'Effect::EffectBuildState' used in qualified name
+#pragma warning (push)
+#pragma warning (disable: 4482)
+	if( EffectMgr::Ref().Find( string("globe"), &m_pEffect ) )
+	{
+		if( m_pEffect->BuildState() == Effect::EffectBuildState::Linked )
+			return true;
+	}
+#pragma warning (pop)
+
+	return false;
+}
+bool Globe::SetUniforms()
 {
 	using namespace AntiMatter;
 	using namespace glm;
 	using std::string;
 
+	if( ! m_pEffect )
+		return false;
+
 	// Indicate which ShaderProgram to use
-	glUseProgram( m_pShaderProgram->ShaderProgId() );
+	glUseProgram( m_pEffect->Id() );
 
 	// bind buffers		
-	glBindVertexArray( m_pShaderProgram->VaoId() );
-	glBindBuffer( GL_ARRAY_BUFFER, m_pShaderProgram->VboId() );	
+	glBindVertexArray( m_nVaoId );
+	glBindBuffer( GL_ARRAY_BUFFER, m_pVbo->Id() );	
 
 	// ensure no texture selected (might've left one selected from previous object)
 	glBindTexture( GL_TEXTURE_2D, 0 );	
@@ -235,13 +317,16 @@ void Globe::SetShaderArgs()
 	glm::mat3 mNormal(mModelView);		
 	mNormal = glm::transpose(mNormal._inverse());
 	
-	m_pShaderProgram->AssignUniformFloat( string("rFallOff"),	0.995f );
-	m_pShaderProgram->AssignUniformMat4( string("mModelView"),	mModelView );	
-	m_pShaderProgram->AssignUniformMat4( string("mMVP"),		m_Data.MVP() );
-	m_pShaderProgram->AssignUniformMat3( string("mNormal"),		mNormal );
+	m_pEffect->AssignUniformFloat(	string("rFallOff"),		0.995f );
+	m_pEffect->AssignUniformMat4(	string("mModelView"),	mModelView );	
+	m_pEffect->AssignUniformMat4(	string("mMVP"),			m_Data.MVP() );
+	m_pEffect->AssignUniformMat3(	string("mNormal"),		mNormal );
 
 	AppLog::Ref().OutputGlErrors();
+
+	return true;
 }
+
 
 // IGraphNode
 HRESULT Globe::Update( const float & rSecsDelta )
@@ -263,7 +348,7 @@ HRESULT Globe::PreRender()
 	// that aside, the sphere geometry is rendered as two triangle fans
 	// and a series of triangle strips.
 
-	if( ! m_pShaderProgram )
+	if( ! m_pEffect )
 		return E_POINTER;
 
 	using namespace AntiMatter;
@@ -276,7 +361,7 @@ HRESULT Globe::PreRender()
 
 	glDisable( GL_DEPTH_TEST );
 	
-	SetShaderArgs();
+	SetUniforms();
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	return S_OK;

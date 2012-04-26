@@ -34,18 +34,16 @@ private:
 
 	Texture					m_TextureMap; 
 	Texture					m_AlphaMap;
-	Texture					m_NormalMap;
 	Material				m_material;
 
 	std::string				m_sTextureMap;
 	std::string				m_sAlphaMap;
 	std::string				m_sNormalMap;
 
-	float					m_rWidth;
+	float					m_rWidth;		// dimensions of the lake's plane _before_ shaping
 	float					m_rHeight;
 
-	int						m_nNumWaves;	
-
+	int						m_nNumWaves;
 	std::vector<float>		m_rAmplitude;
 	std::vector<float>		m_rWavelength;
 	std::vector<float>		m_rVelocity;
@@ -64,7 +62,6 @@ private:
 
 	bool GetShader();
 
-	void SetAttrs();
 	void SetUniforms();	
 
 public:

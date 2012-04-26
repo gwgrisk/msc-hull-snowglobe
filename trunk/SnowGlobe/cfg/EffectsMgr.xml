@@ -29,4 +29,18 @@
 
 	</Effect>
 
+	<Effect name="globe" autobuild="true">
+
+		<Shader type="vertex" name="x-ray.vert" />
+		<Shader type="fragment" name="x-ray.frag" />
+
+		<InputAttributes>
+			<VertexDescription type="CustomVertex" stride="72" />
+			<attrib fieldname="VertexPosition" size="3" offset="0" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexTexCoord" size="2" offset="6" />
+		</InputAttributes>
+
+	</Effect>
+
 </Effects>

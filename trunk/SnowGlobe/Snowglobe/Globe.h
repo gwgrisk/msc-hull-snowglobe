@@ -8,8 +8,10 @@
 #include "Sphere.h"
 #include "Texture.h"
 #include "Material.h"
+#include "Vbo.h"
 #include <glm\glm.hpp>
-#include "ShaderProgram.h"
+#include "Effect.h"
+
 
 class CustomVertex;
 class SceneGraph;
@@ -19,31 +21,37 @@ class Globe :	public IGraphNode,
 				public glex
 {
 private:
-	bool			m_bInitialized;
-	Sphere			m_Sphere;	
-	ShaderProgram*	m_pShaderProgram;
-	Texture			m_tex;
-	Material		m_material;
-	std::string		m_sTexture;
-	glm::vec4		m_vColour;
+	bool					m_bInitialized;
+	Sphere					m_Sphere;	
 
-	float			m_rRadius;
-	int				m_nStacks;
-	int				m_nSlices;
+	Effect*					m_pEffect;
+	Vbo<CustomVertex>*		m_pVbo;
+	GLuint					m_nVaoId;
 
-	float			m_rRotYAngle;
-	float			m_rRotYStep;
-	float			m_rRotYSpeed;
+	Texture					m_tex;
+	Material				m_material;
+	std::string				m_sTexture;
+	glm::vec4				m_vColour;
+
+	float					m_rRadius;
+	int						m_nStacks;
+	int						m_nSlices;
 
 private:
 	Globe( const Globe & );						// disallow copy and assignment (for now.  Will add later;))
 	Globe & operator=( const Globe & );
 
 private:
+	bool InitializeGeometry();
+	void InitializeMaterial();
+	bool InitializeTextures();
 	bool SetPerVertexColour();
-	bool SetTexture();
-	bool CreateShader();
-	void SetShaderArgs();
+	bool InitializeVbo( IGeometry & geometry );
+	bool InitializeVao();
+	bool GetShader();
+	bool SetUniforms();
+	
+	bool CreateShader();	
 	void Uninitialize();
 
 public:
@@ -57,7 +65,7 @@ public:
 
 	const bool Initialized() const	{ return m_bInitialized; }
 	CustomVertex**	Vertices()		{ return m_Sphere.Vertices(); }
-	const int ShaderProgId() const	{ return m_pShaderProgram ? m_pShaderProgram->ShaderProgId() : -1; }
+	const int ShaderProgId() const	{ return m_pEffect->Id(); } 
 
 	
 	// IGraphNode
@@ -66,5 +74,4 @@ public:
 	virtual HRESULT Render();
 	virtual HRESULT PostRender();
 	virtual HRESULT DrawItem();
-	
 };

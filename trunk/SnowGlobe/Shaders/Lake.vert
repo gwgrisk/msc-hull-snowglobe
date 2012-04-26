@@ -74,7 +74,7 @@ float WaveHeight( float x, float y )
 	
 	return rHeight;
 }
-
+/*
 float dWavedy( int n, float x, float y )
 {
 	float rFrequency	= g_2Pi / rWavelength[n];
@@ -107,7 +107,7 @@ vec3 WaveNormal( float x, float y )
 	vec3 vWaveNormal = normalize(vec3(-dx, -dy, 1.0));
 	return vWaveNormal;
 }
-
+*/
 void main()
 {	
 	// NB: use the keys F2-F6 to speed up the season timeline, which affects wave behaviour.

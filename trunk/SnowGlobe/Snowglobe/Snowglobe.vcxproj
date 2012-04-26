@@ -137,7 +137,7 @@
     <ClInclude Include="Lightning.h" />
     <ClInclude Include="LSystem.h" />
     <ClInclude Include="Material.h" />
-    <ClInclude Include="Pond.h" />
+    <ClInclude Include="Pbo.h" />
     <ClInclude Include="Projection.h" />
     <ClInclude Include="Quad.h" />
     <ClInclude Include="SceneGraph.h" />
@@ -166,6 +166,8 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="VertexClass.h" />
+    <ClInclude Include="WavefrontMtl.h" />
+    <ClInclude Include="WavefrontObj.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -184,8 +186,8 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="LSystem.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Pbo.cpp" />
     <ClCompile Include="Plane.cpp" />
-    <ClCompile Include="Pond.cpp" />
     <ClCompile Include="Projection.cpp" />
     <ClCompile Include="Quad.cpp" />
     <ClCompile Include="SceneGraph.cpp" />
@@ -212,6 +214,8 @@
     <ClCompile Include="TreeShaderz.cpp" />
     <ClCompile Include="Tri.cpp" />
     <ClCompile Include="VertexBufferObject.cpp" />
+    <ClCompile Include="WavefrontMtl.cpp" />
+    <ClCompile Include="WavefrontObj.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

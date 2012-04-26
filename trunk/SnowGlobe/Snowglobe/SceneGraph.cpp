@@ -13,10 +13,13 @@
 #include "Globe.h"
 #include "Tree.h"
 #include "House.h"
-#include "Pond.h"
 #include "Lake.h"
 #include "Snow.h"
 #include "Snowfall.h"
+
+#include "WavefrontObj.h"
+#include "WavefrontMtl.h"
+
 #include "slowglobe-cfg.h"
 
 
@@ -57,6 +60,10 @@ bool SceneGraph::InitializeGraph()
 	using glm::vec3;
 	using glm::translate;
 	using glm::rotate;
+
+	// just calling to test the WavefrontObj parser
+	//WavefrontObj j( g_Cfg.AssetsDir() + string("obj\\house\\house.obj") );
+		
 
 	// Initialize the SceneLights collection (lights need access to the SceneGraph in order to initialize)
 	// because of this, light initialization can't be done through plain old RAII
@@ -185,30 +192,7 @@ bool SceneGraph::InitializeGraph()
 	mW = rotate( mW, -90.0f, vec3(0, 1, 0) );
 	pLake->GetNodeData().W() *= (tr * mW);
 	m_map.insert( ActorIdPair( pLake->Id(), pLake) );
-	
-	/*
-	// pond
-	Pond* pPond = new (std::nothrow) Pond(
-		this,
-		pTerrain, 
-		string("pond"),
-		180, 390, 
-		g_Cfg.AssetsDir() + string("water.jpg"),
-		g_Cfg.AssetsDir() + string("water-alphamap.bmp"),
-		string("") 
-	);
 
-	if( ! pPond || ! pPond->Initialized() )
-	{
-		AppLog::Ref().LogMsg("SceneGraph failed to initialized the Pond");
-		return false;
-	}
-
-	tr = translate( mat4(1.0), vec3(0,344,168) );	
-	mW = rotate( mW, -90.0f, vec3(0, 1, 0) );
-	pPond->GetNodeData().W() *= (tr * mW);
-	m_map.insert( ActorIdPair( pPond->Id(), pPond) );
-	*/
 
 	// house
 	House* pHouse = new (std::nothrow) House(
