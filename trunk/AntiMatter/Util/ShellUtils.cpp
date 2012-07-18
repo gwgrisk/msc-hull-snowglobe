@@ -144,27 +144,25 @@ namespace Shell
 
 		return bExists;
 	}
-	HRESULT FileHasExtension( bool & bHasExtension, const std::string & sFile, const std::string & sExtension )
+	bool FileHasExtension( const std::string & sFile, const std::string & sExtension )
 	{
 		using namespace std;
 
 		string sExn;
-		
-		bHasExtension = false;
 
-		if( ! FileExists(sFile) )	
-			return E_INVALIDARG;		
+		if( ! FileExists(sFile) )
+			return false;		
 
 		if( sExtension.length() == 0 || sExtension.length() > sFile.length() )
-			return E_INVALIDARG;				
+			return false;				
 
 		sExn.resize( sExtension.length() );
 		std::copy( sFile.end() - sExtension.length() , sFile.end(), sExn.begin() );
 
 		if( sExn.compare(sExtension) == 0 )
-			bHasExtension = true;
+			return true;
 
-		return S_OK;
+		return false;
 	}
 	DWORD FileSize( const std::string & sFile )
 	{
@@ -225,6 +223,21 @@ namespace Shell
 			return E_UNEXPECTED;
 	
 		sFilePath = T2A( sPath.Left(nPos + 1).GetString() );
+
+		return S_OK;
+	}
+
+	HRESULT GetFilePath( const std::string & sFile, std::string & sPath )
+	{
+		USES_CONVERSION;
+
+		CString csFile = sFile.c_str();		
+
+		int nPos = csFile.ReverseFind(_T('\\'));
+		if (nPos == -1)
+			return E_UNEXPECTED;
+	
+		sPath = T2A( csFile.Left(nPos + 1).GetString() );
 
 		return S_OK;
 	}

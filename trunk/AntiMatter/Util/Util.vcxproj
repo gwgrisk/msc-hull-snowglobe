@@ -91,6 +91,7 @@ copy $(SolutionDir)$(Configuration)\*.lib ..\lib\</Command>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmTimer.h" />
     <ClInclude Include="AppException.h" />
     <ClInclude Include="AppLog.h" />
     <ClInclude Include="Exceptions.h" />

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 #include "precision.h"
 #include "constants.h"
 
@@ -15,9 +16,9 @@ namespace AntiMatter
 	class Rk4
 	{
 	public:	
-		typedef REAL (*MotionFunc)( const REAL t, const REAL x );
+		typedef std::function< float(float,float) > MotionEquation;
 
-		static REAL Integrate( MotionFunc f, const REAL dt, const REAL t0, const REAL x0 );
-		static void IntegrateSteps( std::vector<REAL> & vResults, MotionFunc f, const REAL dt, const REAL t0, const REAL tn, const REAL x0 );		
+		static REAL Integrate( const MotionEquation & f, const REAL dt, const REAL t0, const REAL x0 );
+		static void IntegrateSteps( std::vector<REAL> & vResults, const MotionEquation & f, const REAL dt, const REAL t0, const REAL tn, const REAL x0 );
 	};
 };

@@ -13,9 +13,10 @@ namespace AntiMatter
 	
 		bool FileExists( const std::string & sFile );
 		bool PathExists( const std::string & sPath );
-		HRESULT FileHasExtension( bool & bHasExtension, const std::string & sFile, const std::string & sExtension );
+		bool FileHasExtension( const std::string & sFile, const std::string & sExtension );
 		DWORD FileSize( const std::string & sFile );
 	
 		HRESULT GetModuleFilePath( std::string & sFilePath );
+		HRESULT GetFilePath( const std::string & sFile, std::string & sPath );
 	};
 };
