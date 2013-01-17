@@ -2,7 +2,7 @@
 // TODO: 
 // Improvement:
 // The idea of IGeometry is that each class that implements this interface will be
-// responsible for procedurally generating vertices, possibly also indices.
+// responsible for procedurally generating vertices, indices, normals etc.
 //
 // A class that contains an IGeometry object will instantiate the IGeometry object
 // with various args in order to tailor the geometry to their needs.  The IGeometry
@@ -25,14 +25,15 @@ protected:
 	enum Colours	{R, G, B, A};
 
 protected:
-	virtual ~IGeometry(){}
-	virtual HRESULT GenerateVertices( CustomVertex** ppVertices ) = 0;
+	virtual ~IGeometry(){}	
 
 public:
+	virtual bool GenerateData(){ return false; }
 	virtual const int VertCount() const = 0;
 	virtual const int IndexCount() const	{return 0;}
 	virtual const int TriCount() const		{return 0;}
 
 	virtual CustomVertex** Vertices() =0;
-	virtual DWORD* Indices() { return NULL; }
+	// virtual DWORD* Indices() { return NULL; }
+	virtual unsigned short* Indices() { return NULL; }
 };

@@ -15,10 +15,12 @@
 #include "ShaderDesc.h"
 #include "ShaderInputAttribute.h"
 
+#include <random>
+#include <functional>
 #include <iomanip>
 #include <fstream>
 #include <iostream>
-#include <random>
+
 #include "slowglobe-cfg.h"
 
 #include <AntiMatter\constants.h>
@@ -55,7 +57,7 @@ Lake::Lake(	SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_sNormalMap		( sNormalMap ),
 	m_rWidth			( rWidth ),
 	m_rHeight			( rHeight ),
-	m_nNumWaves			( 2 )
+	m_nNumWaves			( 3 )
 {
 	Initialize();
 }
@@ -334,16 +336,14 @@ bool Lake::InitializeWaveData()
 	if( m_nNumWaves <= 0 )
 		return false;
 
-	using AntiMatter::g_Pi;
-	using std::variate_generator;
+	using AntiMatter::g_Pi;	
 	using std::mt19937;
 	using std::uniform_real_distribution;
 
 	typedef mt19937										Engine;
 	typedef uniform_real_distribution<float>			Distribution;
-	typedef variate_generator< Engine, Distribution >	Generator;	
-
-	Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );	
+	
+	auto r = std::bind(Distribution(0.0f, 1.0f), Engine((DWORD)time(NULL)));
 
 	m_rAmplitude.resize(m_nNumWaves);
 	m_rWavelength.resize(m_nNumWaves);
@@ -354,10 +354,10 @@ bool Lake::InitializeWaveData()
 	{
 		float theta			= glm::mix( 0.0f, 2.0f * g_Pi, r() );
 
-		m_rAmplitude[n]		= 0.45f/(n+1);
-		m_rWavelength[n]	= 16.0f * g_Pi / (n+1);
-		m_rVelocity[n]		= 8.3f * n;
-		m_vDirection[n]		= glm::vec2( sinf(theta), -cosf(theta) );		
+		m_rAmplitude[n]		= 0.75f/(n+1);
+		m_rWavelength[n]	= 13.77f * g_Pi / (n+1);
+		m_rVelocity[n]		= 3.59f * n;
+		m_vDirection[n]		= glm::vec2( sinf(theta), -cosf(theta) );
 	}
 
 	return true;
@@ -445,7 +445,7 @@ void Lake::SetUniforms()
 	vector<Light*> lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		vec4 Pos	= Graph()->Cam().V() * m_Data.W() * lights[x]->Pos();	
+		vec4 Pos	= Graph()->Cam().V() * lights[x]->Pos();	
 		vec3 la		= lights[x]->La();
 		vec3 ld		= lights[x]->Ld();
 		vec3 ls		= lights[x]->Ls();		
@@ -500,15 +500,14 @@ HRESULT Lake::PreRender()
 	//GLuint nSpotlightSub	= glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
 
 	glUseProgram( m_pEffect->Id() );
-	//glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &nSunSub );
 
 	glBindVertexArray( m_nVaoId );	
 
 	SetUniforms();
 
 	// execute the shader program
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-	//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );	
+	// glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );	
 
 	return S_OK;
 }
@@ -519,7 +518,7 @@ HRESULT Lake::Render()
 	if( ! m_bInitialized )
 		return E_UNEXPECTED;
 
-	glDrawElements( GL_TRIANGLES, m_Plane.IndexCount(), GL_UNSIGNED_INT, ((char*)NULL) );
+	glDrawElements( GL_TRIANGLES, m_Plane.IndexCount(), GL_UNSIGNED_SHORT, ((char*)NULL) );
 	AppLog::Ref().OutputGlErrors();
 
 	return S_OK;

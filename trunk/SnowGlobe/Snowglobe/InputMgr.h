@@ -81,20 +81,20 @@ public:
 private:
 	int			m_nXPosition;
 	int			m_nYPosition;	
-	REAL		m_rMouseSpeed;
+	real		m_rMouseSpeed;
 
 	MouseBtn	m_LButton;
 	MouseBtn	m_RButton;
-	REAL		m_rWheelDelta;
+	real		m_rWheelDelta;
 
 public:
 	MouseData();
-	MouseData( int x, int y, REAL rSpeed );
+	MouseData( int x, int y, real rSpeed );
 
 	// gets
 	const int x() const			{ return m_nXPosition; }
 	const int y() const			{ return m_nYPosition; }
-	const REAL speed() const	{ return m_rMouseSpeed; }
+	const real speed() const	{ return m_rMouseSpeed; }
 
 	const MouseBtn LBtn() const	{ return m_LButton; }
 	const MouseBtn RBtn() const	{ return m_RButton; }
@@ -102,13 +102,15 @@ public:
 	// sets
 	void x( const int & x )			{ m_nXPosition = x; }
 	void y( const int & y )			{ m_nYPosition = y; }
-	void speed( const REAL & r )	{ m_rMouseSpeed = r; }
+	void speed( const real & r )	{ m_rMouseSpeed = r; }
 	void LBtn( const MouseBtn & n )	{ m_LButton = n; }
 	void RBtn( const MouseBtn & n )	{ m_RButton = n; }
 };
 
 class InputMgr : public Singleton<InputMgr>
 {
+	friend class Singleton <InputMgr>;
+
 private:
 	KeyData		m_keyboard;
 	MouseData	m_mouse;

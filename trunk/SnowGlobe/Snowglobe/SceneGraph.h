@@ -3,8 +3,7 @@
 
 #include <map>
 #include <string>
-#include <glm\glm.hpp>
-#include <AntiMatter\AppLog.h>
+
 #include "IGraphNode.h"
 #include "Camera.h"
 #include "Projection.h"
@@ -15,7 +14,7 @@ typedef std::pair<std::string, IGraphNode*>	ActorIdPair;
 typedef ActorMap::iterator					AItr;
 
 
-class SceneGraph
+class SceneGraph 
 {
 private:
 	class RootNode : public IGraphNode
@@ -42,7 +41,7 @@ private:
 	ActorMap		m_map;
 	SceneLights		m_lights;
 
-	float			m_rYRotationStep;		
+	float			m_rYRotationStep;
 	bool			m_bInitialized;
 
 	bool InitializeGraph();

@@ -37,6 +37,9 @@ private:
 	int						m_nStacks;
 	int						m_nSlices;
 
+	GLuint					m_nSunSub;
+	GLuint					m_nSpotsSub;
+
 private:
 	Globe( const Globe & );						// disallow copy and assignment (for now.  Will add later;))
 	Globe & operator=( const Globe & );

@@ -1,60 +1,64 @@
 
-// Segment class is used by the Tree.
-// The trunk and branches of the tree are "built" from segments.
-// Segments are organised into a tree structure. 
-// 
-// e.g. the root node is the parent and has zero or more child nodes.
-// each child node has one parent node, and zero or mode child nodes.
-// The LSystem generates these segments, which are then used to draw 
-// the tree by using a number of cylinders.
-
-#pragma once
-
-#include <list>
+#pragma once 
 #include <glm\glm.hpp>
+#include <AntiMatter\precision.h>
+#include <vector>
 
-class Segment;
-typedef std::list<Segment*>		ChildSegments;
+const real g_kInitialSegLength = 20.0f;
+
 
 class Segment
 {
-private:
-	Segment*			m_pParent;
-	ChildSegments		m_ChildSegs;
-	
-	bool				m_bInitialized;
-	int					m_nGeneration;
-	int					m_nNumGenerations;
+public:
+	typedef std::vector<Segment*> ChildSegments;
 
-	glm::mat4			m_W;
-	float				m_rLength;	
+private:
+	glm::vec3		_vPosition;				// base position
+	glm::vec3		_vPosDelta;
+	glm::vec3		_vOrientation;			// normalized direction
+	glm::vec3		_vDeltaOrientation;
 	
+	int				_nGeneration;
+	real			_rLength;
+	real			_rScale;
+
+	Segment*		_pParent;
+	ChildSegments	_ChildSegments;	
 
 private:
 	Segment( const Segment & );					// disallow copy & assignment
 	Segment & operator=( const Segment & );
 
 private:
-	void Uninitialize();
+	void Initialize();
+	void Update( const real rDeltaSecs );
 
 public:
+	// public interface
 	Segment();
-	Segment( Segment* pParent, const glm::mat4 & mOrient, const float rLength, const int nNumGenerations );
+	Segment( Segment* pParent, const glm::vec3 & vDelta );
 	~Segment();
 
-	void AddChildSeg( Segment* pChild );
-	void DeleteChildSegs();
+	void AddChild( Segment* pSeg );
+	void DeleteChildren();
 
-	// gets
-	Segment* Parent()						{ return m_pParent; }
-	ChildSegments & ChildSegs()				{ return m_ChildSegs; }
-	const int Generation() const			{ return m_nGeneration; }
-	const float Length() const				{ return m_rLength; }
-	const glm::mat4 & W() const				{ return m_W; }
-	const glm::vec3 Position() const		{ return glm::vec3(m_W[3][0], m_W[3][1], m_W[3][2]); }
+	// inline accessors
+	const Segment* Parent() const 			{ return _pParent; }
+	ChildSegments & ChildSegs()				{ return _ChildSegments; }	
+	const int Generation()					{ return _nGeneration; }
 
-	// sets
-	void W( const glm::mat4 & mW )			{ m_W = mW; }
-	void Position( const glm::vec3 & r )	{ m_W[3][0] = r.x; m_W[3][1] = r.y; m_W[3][2] = r.z; }
-	void Length( const float r )			{ m_rLength = r; }
+	const glm::vec3 Pos() const 			{ return _vPosition; }	
+	const glm::vec3 PosDelta() const		{ return _vPosDelta; }		
+	const glm::vec3 & Orientation() const	{ return _vOrientation; } 	
+	const glm::vec3 OrientDelta() const		{ return _vDeltaOrientation; }	
+	const real Length() const 				{ return _rLength; }
+
+	void Pos( const glm::vec3 & r ) 		{ _vPosition			= r; }
+	void Orientation( const glm::vec3 & r )	{ _vOrientation			= r; }
+	void Length( const real r ) 			{ _rLength				= r; }
+
+	void PosDelta( const glm::vec3 & r )	{ _vPosDelta			= r; }	
+	void OrientDelta( const glm::vec3 & r )	{ _vDeltaOrientation	= r; }
+	
+	const real Scale() const				{ return _rScale; }
 };

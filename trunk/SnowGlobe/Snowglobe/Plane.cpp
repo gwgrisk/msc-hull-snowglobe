@@ -162,7 +162,7 @@ HRESULT Plane::CreatePlane(
 	const float			rCellWidth, 
 	const float			rCellHeight, 
 	CustomVertex**		ppVertices, 
-	unsigned long**		ppdwIndices
+	unsigned short**	ppdwIndices
 )
 {
 	if( (nVertRows <= 0) || (nVertCols <= 0) || (rCellWidth <= 0.0f) || (rCellHeight <= 0.0f) ||
@@ -260,7 +260,7 @@ HRESULT Plane::GenerateVertices( CustomVertex** ppVertices )
 
 	return S_OK;
 }
-HRESULT Plane::GenerateIndices( DWORD** ppdwIndices )
+HRESULT Plane::GenerateIndices( unsigned short** ppdwIndices )
 {	
 	// iterate the quads and make indices for two triangles per quad
 	// see the Quad "IGeometry" class for a simpler implementation of this
@@ -272,7 +272,7 @@ HRESULT Plane::GenerateIndices( DWORD** ppdwIndices )
 	if( ! ppdwIndices )
 		return E_INVALIDARG;
 
-	*ppdwIndices = new (std::nothrow) DWORD[m_nIndexCount];
+	*ppdwIndices = new (std::nothrow) unsigned short[m_nIndexCount];
 	if ( ! *ppdwIndices )	
 		return E_OUTOFMEMORY;
 
@@ -302,13 +302,13 @@ HRESULT Plane::GenerateIndices( DWORD** ppdwIndices )
 	{
 		for( int w = 0; w < m_nCellCols; w ++ )
 		{
-			(*ppdwIndices)[n]	= h		* m_nVertCols + w;
-			(*ppdwIndices)[n+1] = (h+1)	* m_nVertCols + w;
-			(*ppdwIndices)[n+2] = (h)	* m_nVertCols + w + 1;
+			(*ppdwIndices)[n]	= (unsigned short)(h		* m_nVertCols + w);
+			(*ppdwIndices)[n+1] = (unsigned short)((h+1)	* m_nVertCols + w);
+			(*ppdwIndices)[n+2] = (unsigned short)((h)	* m_nVertCols + w + 1);
 
-			(*ppdwIndices)[n+3] = (h+1)	* m_nVertCols + w;
-			(*ppdwIndices)[n+4] = (h+1)	* m_nVertCols + w + 1;
-			(*ppdwIndices)[n+5] = h		* m_nVertCols + w + 1;
+			(*ppdwIndices)[n+3] = (unsigned short)((h+1)	* m_nVertCols + w);
+			(*ppdwIndices)[n+4] = (unsigned short)((h+1)	* m_nVertCols + w + 1);
+			(*ppdwIndices)[n+5] = (unsigned short)(h		* m_nVertCols + w + 1);
 
 			n += 6;
 		}

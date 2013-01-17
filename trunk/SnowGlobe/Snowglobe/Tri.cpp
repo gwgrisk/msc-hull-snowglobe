@@ -170,15 +170,15 @@ HRESULT Tri::GenerateVertices( CustomVertex** ppVertices )
 		(*ppVertices)[n].m_Normal[Y] = 1.0f;
 		(*ppVertices)[n].m_Normal[Z] = 0.0f;
 
-		(*ppVertices)[n].m_colour[R] = 1.0f;
-		(*ppVertices)[n].m_colour[G] = 1.0f;
-		(*ppVertices)[n].m_colour[B] = 1.0f;
-		(*ppVertices)[n].m_colour[A] = 1.0f;
+		(*ppVertices)[n].m_Colour[R] = 1.0f;
+		(*ppVertices)[n].m_Colour[G] = 1.0f;
+		(*ppVertices)[n].m_Colour[B] = 1.0f;
+		(*ppVertices)[n].m_Colour[A] = 1.0f;
 	}
 	
 	return S_OK;
 }
-HRESULT Tri::GenerateIndices( DWORD** ppIndices )
+HRESULT Tri::GenerateIndices( unsigned short** ppIndices )
 {
 	if( m_bInitialized )
 		return E_UNEXPECTED;
@@ -186,7 +186,7 @@ HRESULT Tri::GenerateIndices( DWORD** ppIndices )
 	if( ! ppIndices )
 		return E_INVALIDARG;
 
-	*ppIndices = new (std::nothrow) DWORD[m_nIndexCount];
+	*ppIndices = new (std::nothrow) unsigned short[m_nIndexCount];
 	if( ! *ppIndices )
 		return E_OUTOFMEMORY;
 

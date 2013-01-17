@@ -8,60 +8,62 @@
 #include "LSystem.h"
 #include "Cylinder.h"
 #include "Texture.h"
-#include "TreeShaderz.h"
 #include "Material.h"
+#include "Vbo.h"
 #include <vector>
 
 
-class CustomVertex;
-class ShaderProgram;
-class SceneGraph;
-
+class Effect;
 
 class Tree :	public IGraphNode,
 				public glex
 {
-private:
+private:	
 	typedef std::vector<Segment*>	Generation;
 	typedef std::vector<Generation>	LTree;
+	enum							eTreeShader { WireFrame, Flat, Smooth, SmoothTextured, BumpTextured };
+	std::vector<std::string>		_ShaderNames;
 
 private:
-	bool					m_bInitialized;
+	bool							m_bInitialized;
 	
-	Material				m_material;
-	Texture					m_texBark;
-	Texture					m_texBump;
-	std::string				m_sBarkFile;
-	std::string				m_sBumpFile;
-
-	eTreeShaders			m_CurrentShader;		// key select tree shader
-	TreeShaderz				m_Shaderz;
-	ShaderProgram *			m_pCurrentShader;
-
-	float					m_rInitialSegLength;
-	LSystem					m_LSystem;
-	LTree					m_LTree;
-	Cylinder				m_Cylinder;	
+	Material						m_material;
+	Texture							m_texBark;
+	Texture							m_texBump;
+	std::string						m_sBarkFile;
+	std::string						m_sBumpFile;
+	
+	eTreeShader						m_CurrentShader;	
+	Effect*							m_pEffect;		// currently selected effect
+	Vbo<CustomVertex> *				m_pVbo;			// vertex data
+	GLuint							m_nVaoId;
+	
+	
+	LTree							m_LTree;
+	LSystem							m_LSystem;	
+	Cylinder						m_Cylinder;	
+	float							m_rInitialSegLength;
 
 private:
 	bool Initialize();
-	void Uninitialize();
+	void Uninitialize();	
 
-	bool InitializeLSystem();
-	
+	void InitShaderNames();
+	bool InitializeGeometry();
+	bool InitializeMtl();
+	bool InitializeTextures();
+	bool InitializeVbo( IGeometry & geometry );
+	bool InitializeVao();
+
+	bool GetShader(const eTreeShader e);
+	bool SetShaderArgs();
+
+	bool InitializeLSystem();	
 	HRESULT InitializeLTree();
 	void AddSegChildren( Segment* pSeg );
-	void AddSegment( Segment* pSeg );
+	void AddSegment( Segment* pSeg );	
 
-	bool SetPerVertexColour();
-	bool LoadTexture();
-	bool LoadBumpMap();
-	
-	bool InitializeShaders();
-	bool CreateShaderProgram( const std::string & sVert, const std::string & sFrag, ShaderProgram ** ppShaderProg );
-	void UninitializeShaders();
-
-	void SetShaderArgs();
+	glm::mat4 CalcSegOrientationMatrix(const glm::vec3 & vOrientation, const glm::vec3 & vPos );
 
 public:
 	Tree();

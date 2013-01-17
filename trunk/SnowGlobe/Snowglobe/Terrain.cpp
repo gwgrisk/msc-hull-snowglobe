@@ -184,9 +184,9 @@ bool Terrain::Initialize()
 			return false;	
 
 	// material
-	m_material.Ka(vec3(1.0, 1.0, 1.0));
-	m_material.Kd(vec3(1.0, 1.0, 1.0));
-	m_material.Ks(vec3(0.1, 0.2, 0.1));
+	m_material.Ka(vec3(0.0, 0.0, 0.0));
+	m_material.Kd(vec3(0.2, 1.0, 0.2));
+	m_material.Ks(vec3(0.0, 0.1, 0.0));
 	m_material.Shininess( 1.0f );
 
 
@@ -362,7 +362,11 @@ void Terrain::SetShaderArgs()
 
 	// Indicate which ShaderProgram to use	
 	glUseProgram( nShaderProgId );
-	glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotlightSub );
 
 	// bind buffers
 	glBindVertexArray( nVaoId );							// vertex array object
@@ -373,17 +377,18 @@ void Terrain::SetShaderArgs()
 	// -- Assign uniform variables ------
 	
 	// vViewPosition (camera position transformed into view space)
-	vec3 vCamPos = vec3(Graph()->Cam().V() * m_Data.W() * vec4( Graph()->Cam().Pos(), 1.0));
+	// vec3 vCamPos = vec3(Graph()->Cam().V() * m_Data.W() * vec4( Graph()->Cam().Pos(), 1.0));
+	vec3 vCamPos = vec3(Graph()->Cam().V() * vec4( Graph()->Cam().Pos(), 1.0));
 	m_pShaderProgram->AssignUniformVec3( string("vViewPosition"), vCamPos );
 
 	// lights - light[0-3] = spotlights, light[4] = sun
 	vector<Light*> lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		glm::vec4 vLightPos	= Graph()->Cam().V() * m_Data.W() * lights[x]->Pos();
+		glm::vec4 vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
 		glm::vec3 la		= lights[x]->La();
 		glm::vec3 ld		= lights[x]->Ld();
-		glm::vec3 ls		= lights[x]->Ls();		
+		glm::vec3 ls		= lights[x]->Ls();
 
 		stringstream ssP, ssLa, ssLd, ssLs;			
 			
@@ -419,7 +424,7 @@ void Terrain::SetShaderArgs()
 	// matrices
 	glm::mat4 mView			= this->Graph()->Cam().V();
 	glm::mat4 mModel		= m_Data.W();
-	glm::mat4 mModelView	= mModel * mView;
+	glm::mat4 mModelView	= mView * mModel;
 
 	glm::mat3 mNormal(mModelView);
 	mNormal = glm::transpose(mNormal._inverse());
@@ -487,7 +492,7 @@ HRESULT Terrain::Render()
 	if( ! m_pShaderProgram )
 		return E_POINTER;
 
-	glDrawElements( GL_TRIANGLES, m_Plane.IndexCount(), GL_UNSIGNED_INT, ((char*)NULL) );
+	glDrawElements( GL_TRIANGLES, m_Plane.IndexCount(), GL_UNSIGNED_SHORT, ((char*)NULL) );
 
 	return S_OK;
 }

@@ -5,13 +5,17 @@
 #include "SceneGraph.h"
 #include "Light.h"
 #include "slowglobe-cfg.h"
+#include "Colours.h"
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 
 #include <AntiMatter\AppLog.h>
+#include <AntiMatter\Constants.h>
 #include <AntiMatter\AppException.h>
+
+#include <glm\glm.hpp>
 
 
 typedef std::vector<Light*>::iterator	LItr;
@@ -73,26 +77,76 @@ bool SceneLights::LoadLights()
 }
 bool SceneLights::HardcodedLights()
 {
+	// if a lights.cfg file doesn't exist, then this function
+	// creates some defaults and creates the cfg file for future
+	// use.
+
 	using namespace std;
+	using AntiMatter::g_Pi;
 
 	bool bRet = false;
 
 	// ensure lights list is empty
-	Clear();
+	Clear();	
 	
-	glm::vec3 La(0.2, 0.2, 0.2);
-	glm::vec3 Ld(0.6, 0.6, 0.6);
-	glm::vec3 Ls(0.1, 0.1, 0.1);
+	glm::vec3 vNone(0.0, 0.0, 0.0);	
+	glm::vec3 vFull(1.0, 1.0, 1.0);
 
-	glm::vec3 pSun(1.0, 1.0, 1.0);
+	float rMultiplier	= 6.0f;
 
-	// create hard coded lights	
-	AddLight( new Light( this->Graph(), this->Graph()->Root(), std::string("light0"),	glm::vec4(100, 400, 400, 1), La, Ld, Ls) );				// light 0
-	AddLight( new Light( this->Graph(), this->Graph()->Root(), std::string("light1"),	glm::vec4(100, 400, -400, 1), La, Ld, Ls) );
-	AddLight( new Light( this->Graph(), this->Graph()->Root(), std::string("light2"),	glm::vec4(-100, 400, 600, 1), La, Ld, Ls) );
-	AddLight( new Light( this->Graph(), this->Graph()->Root(), std::string("light3"),	glm::vec4(-100, 400, -600, 1), La, Ld, Ls) );				// light n
-	AddLight( new Light( this->Graph(), this->Graph()->Root(), std::string("sun"),	glm::vec4(0, 200, 0, 1), La, Ld, Ls) );			// the sun
+	for( unsigned int n = 0; n < 4; ++ n )
+	{
+		std::stringstream	ss;
+		std::string			sName; 
 
+		ss << "light" << n;
+		sName = ss.str();
+		
+		float rRadius		= 650.0f;
+		float rSlices		= 4.0f;
+		float rTheta		= ((2.0f * g_Pi) / rSlices);
+		float x				= rRadius * -cosf((float)n * rTheta);
+		float z				= rRadius * sinf((float)n * rTheta);
+		glm::vec3 vColour	= glm::vec3(Colours::g_ColourList[n]);
+		SceneGraph* pGraph	= this->Graph();
+
+		AddLight( 
+			new Light( 
+				pGraph, 
+				pGraph->Root(), 
+				sName, 
+				glm::vec4(x, rRadius, z, 1), 
+				vNone, 
+				vColour,
+				vColour * rMultiplier
+			)
+		);
+	}
+
+	// sun light
+	AddLight( new Light( 
+			this->Graph(), 
+			this->Graph()->Root(), 
+			std::string("sun"),	
+			glm::vec4(0.0, 500.0, 0.0, 1.0), 
+			vNone, 
+			vFull,
+			vFull * rMultiplier
+		) 
+	);
+
+	/*
+	// globe-specularity light
+	AddLight( new Light( 
+			this->Graph(), 
+			this->Graph()->Root(), 
+			std::string("globe-specular"),	
+			glm::vec4(100.0f, 200.0f, -500.0f, 1.0f), 
+			La, full, full
+		) 
+	);
+	*/
+	
 	bRet = true;
 
 	// write lights out to disk

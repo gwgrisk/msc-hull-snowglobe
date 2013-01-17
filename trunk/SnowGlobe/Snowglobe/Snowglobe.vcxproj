@@ -21,6 +21,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfAtl>Static</UseOfAtl>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -28,6 +29,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfAtl>Static</UseOfAtl>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -53,12 +55,12 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>msvcrtd.lib</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libcmtd.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
@@ -102,6 +104,8 @@
     <None Include="..\Shaders\debug.frag" />
     <None Include="..\Shaders\debug.geo" />
     <None Include="..\Shaders\debug.vert" />
+    <None Include="..\Shaders\flat.frag" />
+    <None Include="..\Shaders\flat.vert" />
     <None Include="..\Shaders\Lake.frag" />
     <None Include="..\Shaders\Lake.vert" />
     <None Include="..\Shaders\Snow.frag" />
@@ -113,14 +117,16 @@
     <None Include="..\Shaders\textured-phong.vert" />
     <None Include="..\Shaders\tree-wireframe.frag" />
     <None Include="..\Shaders\tree-wireframe.vert" />
-    <None Include="..\Shaders\x-ray.frag" />
-    <None Include="..\Shaders\x-ray.vert" />
+    <None Include="..\Shaders\globe.frag" />
+    <None Include="..\Shaders\globe.vert" />
     <None Include="level 0.cd" />
     <None Include="small.ico" />
     <None Include="SnowGlobe.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Actor.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Colours.h" />
     <ClInclude Include="Cylinder.h" />
     <ClInclude Include="Drift.h" />
     <ClInclude Include="Effect.h" />
@@ -128,6 +134,7 @@
     <ClInclude Include="Fire.h" />
     <ClInclude Include="FrameBufferObject.h" />
     <ClInclude Include="Globe.h" />
+    <ClInclude Include="HashedString.h" />
     <ClInclude Include="House.h" />
     <ClInclude Include="IGeometry.h" />
     <ClInclude Include="IGraphNode.h" />
@@ -170,6 +177,7 @@
     <ClInclude Include="WavefrontObj.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Actor.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Cylinder.cpp" />
     <ClCompile Include="Drift.cpp">

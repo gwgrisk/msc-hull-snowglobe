@@ -30,7 +30,7 @@ private:
 	GLuint					m_nVboIndexId;
 
 	CustomVertex**			m_ppVertices;
-	DWORD*					m_pdwIndices;
+	unsigned short*			m_pdwIndices;
 
 	GLuint					m_nVertexCount;
 	GLuint					m_nIndexCount;
@@ -49,7 +49,7 @@ private:
 public:
 	ShaderProgram(
 		CustomVertex**	ppVertices,
-		DWORD*			pdwIndices,
+		unsigned short*	pdwIndices,
 		GLuint			nVertices,
 		GLuint			nIndices,
 		const std::vector<ShaderDesc> & vShaderDescs, 

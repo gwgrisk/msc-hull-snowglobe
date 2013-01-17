@@ -1,5 +1,3 @@
-
-
 //
 // Wavefront OBJ file loader
 // 
@@ -19,14 +17,16 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <map>
 #include <glm\glm.hpp>
+#include "HashedString.h"
 
 class Material;
 
 
 class WavefrontObj
 {
-private:
+public:
 	class Index
 	{
 	private:
@@ -52,7 +52,7 @@ private:
 		std::vector<Index>		m_Indices;
 
 	public:
-		const std::vector<Index> & Vertices()
+		const std::vector<Index> & Indices()
 		{
 			return m_Indices;
 		}
@@ -124,32 +124,29 @@ private:
 	};
 		
 private:
-	std::string					m_sFilename;
-	std::vector<glm::vec3>		m_Vertices;
-	std::vector<glm::vec3>		m_Normals;
-	std::vector<glm::vec2>		m_TexCoords;
-	std::vector<Material>		m_materials;
+	bool							m_bInitialized;
+	std::string						m_sFilename;
+	std::vector<glm::vec3>			m_Vertices;
+	std::vector<glm::vec3>			m_Normals;
+	std::vector<glm::vec2>			m_TexCoords;
+	std::map<std::string, Material>	m_materials;
 
-	std::vector<Face>			m_Faces;
-	std::vector<SubGroup>		m_Groups;
+	std::vector<Face>				m_Faces;
+	std::vector<SubGroup>			m_Groups;
 
-	int							m_nCurrentGroupIndex;		// current group index
+	int								m_nCurrentGroupIndex;		// current group index
 
 private:
 	bool ValidateFile( const std::string & sFile );
 	bool FileExists( const std::string & sFile );
 	bool FileHasObjExtension( const std::string & sFile );
 
-	void ParseFile();
-	void ParseVertex( std::ifstream & stream );
-	void ParseTexCoord( std::ifstream & stream );
-	void ParseNormal( std::ifstream & stream );
-	void ParseFace( std::ifstream & stream );
-	void ParseComment( std::ifstream & stream );
-	void ParseMtllib( std::ifstream & stream );
-	void ParseUsemtl( std::ifstream & stream );
+	bool ParseFile();
+	void ParseFace( std::stringstream & stream );
+	void ParseMtllib( std::stringstream & stream );
+	void ParseUsemtl( std::stringstream & stream );
 
-	void NewSubGroup( std::ifstream & stream );
+	void NewSubGroup( std::stringstream & stream );
 
 	void SplitString( const std::string & sInput, const char cDelimiter, std::vector<std::string> & sElements );
 
@@ -157,7 +154,22 @@ private:
 								int & nVertIndex, int & nTexIndex, int & nNormIndex  );
 
 public:
+	WavefrontObj();
 	WavefrontObj( const std::string & sFile );
 	~WavefrontObj();
-};
 
+	bool Initialized() const { return m_bInitialized; }
+	
+	const std::vector<glm::vec3> & Vertices() const		{ return m_Vertices; }
+	const std::vector<glm::vec3> & Normals() const		{ return m_Normals; }
+	const std::vector<glm::vec2> & TexCoords() const	{ return m_TexCoords; }
+
+	void MoveVerts( std::vector<glm::vec3> & l )		{ l = std::move( m_Vertices ); }
+	void MoveNorms( std::vector<glm::vec3> & l )		{ l = std::move( m_Normals ); }
+	void MoveTexCs( std::vector<glm::vec2> & l )		{ l = std::move( m_TexCoords ); }
+
+	void MoveMaterials( std::map<std::string, Material> & l ) { l = std::move(m_materials); }
+
+	const std::vector<Face> & Faces() const				{ return m_Faces; }
+	const std::vector<SubGroup> & SubGroups() const		{ return m_Groups; }
+};

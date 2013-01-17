@@ -25,7 +25,7 @@ MouseData::MouseData() :
 	m_rWheelDelta	( 0.0f )
 {
 }
-MouseData::MouseData( int x, int y, REAL rSpeed ) :
+MouseData::MouseData( int x, int y, real rSpeed ) :
 	m_nXPosition	(x),
 	m_nYPosition	(y),
 	m_rMouseSpeed	(rSpeed)

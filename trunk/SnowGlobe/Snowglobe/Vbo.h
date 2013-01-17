@@ -13,7 +13,7 @@ private:
 	int				m_nNumVertices;
 	int				m_nNumIndices;
 	T**				m_ppVertices;
-	DWORD*			m_pIndices;
+	unsigned short*	m_pIndices;
 
 private:
 	void Initialize();
@@ -21,7 +21,7 @@ private:
 
 public:
 	Vbo();
-	Vbo( int nNumVerts, T** ppVertices, int nNumIndices, DWORD* pIndices );
+	Vbo( int nNumVerts, T** ppVertices, int nNumIndices, unsigned short* pIndices );
 	Vbo( const Vbo<T> & rhs );						// copy
 	Vbo<T> & operator=( const Vbo<T> & rhs );		// assignment
 	~Vbo();
@@ -57,7 +57,7 @@ Vbo<T>::Vbo() :
 }
 		
 template <typename T>
-Vbo<T>::Vbo( int nNumVerts, T** ppVertices, int nNumIndices, DWORD* pIndices ) :	
+Vbo<T>::Vbo( int nNumVerts, T** ppVertices, int nNumIndices, unsigned short* pIndices ) :	
 	m_bInitialized	( false ),	
 	m_nVboId		( 0 ),
 	m_nVboIdIndex	( 0 ),	
@@ -149,17 +149,27 @@ bool Vbo<T>::CopyToGfxMem()
 	glGenBuffers( 1, &m_nVboId );							// request a VBO id allocation
 	glBindBuffer( GL_ARRAY_BUFFER, m_nVboId );				// bind the ident with the mem location
 	
+	GLuint nSize = sizeof(T) * m_nNumVertices;
+
 	glBufferData(											// allocate the space in gfx memory
 		GL_ARRAY_BUFFER,
-		sizeof(T) * m_nNumVertices,
+		nSize,
 		0,
 		GL_STATIC_DRAW
 	);
 	
-	if( glGetError() != GL_NO_ERROR )
-	{
-		AppLog::Ref().LogMsg("%s glBufferData call failed", __FUNCTION__);
-		return false;
+
+	GLuint nErrorCode;
+
+	if( (nErrorCode = glGetError()) != GL_NO_ERROR )
+	{		
+		if( nErrorCode != GL_INVALID_ENUM  )
+		{
+			AppLog::Ref().LogMsg("%s glBufferData (malloc) failed attempting to allocate %d bytes, gl errorcode %d", __FUNCTION__, nSize, nErrorCode );
+			AppLog::Ref().OutputGlErrors();
+			assert(0);
+			return false;
+		}
 	}
 
 	
@@ -171,9 +181,11 @@ bool Vbo<T>::CopyToGfxMem()
 		*m_ppVertices
 	);
 
-	if( glGetError() != GL_NO_ERROR )
+	if( (nErrorCode = glGetError()) != GL_NO_ERROR )
 	{
 		AppLog::Ref().LogMsg("%s glBufferSubData call failed", __FUNCTION__);
+		AppLog::Ref().OutputGlErrors();
+		assert(0);
 		return false;
 	}
 
@@ -187,14 +199,16 @@ bool Vbo<T>::CopyToGfxMem()
 		// allocate & memcpy
 		glBufferData( 
 			GL_ELEMENT_ARRAY_BUFFER,
-			sizeof(DWORD) * m_nNumIndices,
+			sizeof(unsigned short) * m_nNumIndices,
 			m_pIndices, 
 			GL_STATIC_DRAW
 		);
 
-		if( glGetError() != GL_NO_ERROR )
+		if( (nErrorCode = glGetError()) != GL_NO_ERROR )
 		{
 			AppLog::Ref().LogMsg("%s glBufferData on index vbo failed", __FUNCTION__);
+			AppLog::Ref().OutputGlErrors();
+			assert(0);
 			return false;
 		}
 	}

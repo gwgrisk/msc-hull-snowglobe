@@ -1,58 +1,108 @@
 
 #include "stdafx.h"
-#include "Segment.h"
+#include "segment.h"
+#include <vector>
+#include <algorithm>
 #include <glm\glm.hpp>
-#include "Cylinder.h"
 
 Segment::Segment() :
-	m_pParent			( NULL ),
-	m_bInitialized		( false ),	
-	m_nGeneration		( 0 ),
-	m_nNumGenerations	( 0 ),
-	m_W					( glm::mat4(1.0) ),
-	m_rLength			( 0.0f )		
+	_pParent			(nullptr),
+	_vDeltaOrientation	(glm::vec3(0,0,0)),
+	_rLength			(g_kInitialSegLength),
+	_nGeneration		(0)	
 {
 }
-Segment::Segment( Segment* pParent, const glm::mat4 & mOrient, const float rLength, const int nNumGenerations ) :
-	m_pParent			( pParent ),
-	m_bInitialized		( true ),	
-	m_nGeneration		( pParent ? pParent->Generation() + 1 : 0 ),
-	m_nNumGenerations	( nNumGenerations ),
-	m_W					( mOrient ),
-	m_rLength			( rLength )
+Segment::Segment(
+	Segment* 			pParent, 
+	const glm::vec3 & 	vDelta
+) : 
+	_pParent			(pParent),
+	_vDeltaOrientation	(vDelta),
+	_rLength			(g_kInitialSegLength),
+	_rScale				(1.0f)
 {
+	Initialize();
 }
+
 Segment::~Segment()
 {
-	Uninitialize();
+	DeleteChildren();
 }
 
-void Segment::Uninitialize()
-{
-	DeleteChildSegs();
-
-	m_nGeneration	= 0;
-	m_rLength		= 0;
-	m_pParent		= NULL;
-	m_W				= glm::mat4(1);
+void Segment::Initialize()
+{	
+	// initialize position, orientation, length and generation of the segment
+	if( _pParent )
+	{
+		_vPosition			= _pParent->Pos() + (_pParent->Orientation() * _pParent->Length() );
+		_vOrientation		= glm::normalize( _pParent->Orientation() + _vDeltaOrientation );
+		_vDeltaOrientation	= _vDeltaOrientation;
+		_nGeneration		= _pParent->Generation() + 1;
+				
+		// compute segment length based on segment generation			
+		switch( _nGeneration )
+		{
+			case 0:  _rScale = 1.0f;  break;
+			case 1:  _rScale = 0.75f; break;
+			case 2:  _rScale = 0.60f;  break;
+			case 3:  _rScale = 0.55f;  break;
+			default: _rScale = 0.30f; break;
+		}
+		
+		_rLength = _nGeneration > 0 ? (_rScale * _pParent->Length()) : (g_kInitialSegLength) ;
+	}
+	else
+	{
+		_vPosition 		= glm::vec3(0,0,0);
+		_vOrientation 	= glm::vec3(0,1,0);
+		_rLength		= g_kInitialSegLength;
+		_rScale			= 1.0f;
+		_nGeneration 	= 0;
+	}
 }
-void Segment::AddChildSeg( Segment* pChild )
-{
-	if( ! pChild )
-		return;
 
-	this->m_ChildSegs.push_back(pChild);
+void Segment::Update( const real rDeltaSecs )
+{
+	// update position, scale and length of the segment
+
+	if( _pParent )
+	{
+		_vPosition = _pParent->Pos() + ( _pParent->Orientation() * _pParent->Length() );
+		
+		// compute segment length based on generation
+		// and todo: length of segment is also a function of how much "growth" time has 
+		// elapsed.  You'll need to consult the season timeline object for this info		
+		switch( _nGeneration )
+		{
+			case 0:  _rScale = 1.0f;  break;
+			case 1:  _rScale = 0.75f; break;
+			case 2:  _rScale = 0.60f;  break;
+			case 3:  _rScale = 0.55f;  break;
+			default: _rScale = 0.30f; break;
+		}
+		
+		_rLength = _nGeneration > 0 ? (_rScale * _pParent->Length()) : (g_kInitialSegLength) ;
+	}
 }
-void Segment::DeleteChildSegs()
+
+void Segment::AddChild( Segment* pSeg )
 {
-	for( ChildSegments::iterator n = m_ChildSegs.begin(); n != m_ChildSegs.end(); n ++ )
-	{		
-		Segment *pNext = *n;
-		pNext->DeleteChildSegs();
+	_ChildSegments.push_back( pSeg );
+}
+void Segment::DeleteChildren()
+{
+	// recursively delete all elements of 
+	// the children of this segment
 
-		delete pNext;
-		pNext = NULL;
-	}	
+	std::for_each(
+		_ChildSegments.begin(), _ChildSegments.end(),
+		[]( Segment* p )
+		{
+			p->DeleteChildren();
+		}
+	);
 
-	m_ChildSegs.clear();
-} 
+	_ChildSegments.erase(
+		_ChildSegments.begin(), _ChildSegments.end()
+	);
+}

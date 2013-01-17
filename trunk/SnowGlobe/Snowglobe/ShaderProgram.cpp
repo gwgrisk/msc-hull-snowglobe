@@ -14,7 +14,7 @@
 #include <fstream>
 
 ShaderProgram::ShaderProgram(	CustomVertex** ppVertices, 
-								DWORD* pdwIndices, 
+								unsigned short* pdwIndices, 
 								GLuint nVertices, 
 								GLuint nIndices, 
 								const std::vector<ShaderDesc> & shaders, 
@@ -200,7 +200,7 @@ void ShaderProgram::CopyToGfxMem()
 		// allocate & memcpy
 		glBufferData( 
 			GL_ELEMENT_ARRAY_BUFFER,
-			sizeof(DWORD) * m_nIndexCount,
+			sizeof(unsigned short) * m_nIndexCount,
 			m_pdwIndices, 
 			GL_STATIC_DRAW
 		);

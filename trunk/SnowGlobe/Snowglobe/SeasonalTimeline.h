@@ -6,6 +6,9 @@
 
 class SeasonalTimeline : public Singleton <SeasonalTimeline>
 {
+private: 
+	friend class Singleton <SeasonalTimeline>;
+
 public:
 	enum Seasons { Spring, Summer, Autumn, Winter };
 

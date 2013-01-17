@@ -22,15 +22,16 @@ private:
 
 	// representation
 	CustomVertex *			m_pVertices;
-	DWORD *					m_pdwIndices;
+	unsigned short *		m_pdwIndices;
 
 
 private:
 	bool Initialize();	
 
 	// IGeometry
+	bool GenerateData(){ return true; }
 	HRESULT GenerateVertices( CustomVertex** ppVertices );	
-	HRESULT GenerateIndices( DWORD ** ppdwIndices );
+	HRESULT GenerateIndices( unsigned short ** ppdwIndices );
 
 public:
 	Sphere();
@@ -50,5 +51,5 @@ public:
 	const int Stacks() const		{ return m_nStacks; }
 
 	CustomVertex** Vertices()		{ return &m_pVertices; }
-	DWORD* Indices()				{ return m_pdwIndices; }
+	unsigned short* Indices()		{ return m_pdwIndices; }
 };

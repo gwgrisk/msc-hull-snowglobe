@@ -9,9 +9,12 @@
 #include <iostream>
 #include "IGraphNode.h"
 #include "Sphere.h"
+#include "Material.h"
+#include "Vbo.h"
 
 class SceneGraph;
-class ShaderProgram;
+class Effect;
+class CustomVertex;
 
 
 class Light :	public IGraphNode,
@@ -21,25 +24,36 @@ public:
 	enum LightType { DirectionalLight, PointLight, SpotLight };
 
 private:
-	Sphere			m_Sphere;
-	ShaderProgram*	m_pShaderProgram;		// this is for the sphere!
+	Sphere				m_Sphere;
+	Effect*				m_pEffect;
+	Material			m_material;
+	Vbo<CustomVertex>*	m_pVbo;
+	GLuint				m_nVaoId;
 
-	LightType		m_Type;	
+	LightType			m_Type;	
 
-	glm::vec3		m_vIntensity;
-	glm::vec4		m_vPosition;
-	glm::vec3		m_vDirection;
+	glm::vec3			m_vIntensity;
+	glm::vec4			m_vPosition;
+	glm::vec3			m_vDirection;
 
-	glm::vec3		m_La;
-	glm::vec3		m_Ld;
-	glm::vec3		m_Ls;
+	glm::vec3			m_La;
+	glm::vec3			m_Ld;
+	glm::vec3			m_Ls;
 
 private:
 	void Initialize();
 	void Uninitialize();
 
-	bool CreateShader();
-	void SetShaderArgs();
+	bool InitializeGeometry();
+	void InitializeMaterial();
+	bool InitializeTextures();
+	bool SetPerVertexColour();
+	bool InitializePosition();
+
+	bool InitializeVbo( IGeometry & geometry );
+	bool InitializeVao();
+	bool GetShader();
+	bool SetUniforms();
 
 public:
 	Light();

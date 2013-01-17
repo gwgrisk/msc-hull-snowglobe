@@ -12,6 +12,9 @@
 class EffectMgr :	public Singleton <EffectMgr>,
 					public glex
 {
+private:
+	friend class Singleton <EffectMgr>;
+
 private:	
 	typedef std::map< std::string, Effect & > EffectMap;
 	
@@ -25,11 +28,12 @@ private:
 
 	bool Initialize();	
 
-public:
+
 	EffectMgr();
 	EffectMgr( const std::string & sConfigFile );
 	~EffectMgr();
-	
+
+public:
 	bool Initialized()	{ return m_bInitialized; }
 	void Uninitialize();
 

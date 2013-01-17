@@ -19,8 +19,9 @@
 #include <fstream>
 #include <iostream>
 
-#include <random>
 
+#include <random>
+#include <functional>
 
 
 Snow::Snow() :
@@ -206,17 +207,16 @@ void Snow::Uninitialize()
 bool Snow::GenerateSnowData()
 {
 	using AntiMatter::g_Pi;
-	using AntiMatter::AppLog;
-	using std::variate_generator;
+	using AntiMatter::AppLog;	
 	using std::mt19937;
 	using std::uniform_real_distribution;
 	using glm::mix;
 	
 	typedef mt19937										Engine;
-	typedef uniform_real_distribution<float>			Distribution;
-	typedef variate_generator< Engine, Distribution >	Generator;
+	typedef uniform_real_distribution<float>			Distribution;	
 
-	Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );
+	// Generator r( Engine((DWORD)time(NULL)), Distribution(0.0f, 1.0f) );
+	auto r = std::bind(Distribution(0.0f, 1.0f), Engine((DWORD)time(NULL)));
 
 	if( m_pParticleData )
 	{
@@ -574,7 +574,7 @@ HRESULT Snow::Update( const float & rSecsDelta )
 	rRotation += 0.15f;
 
 	mat4 mR		= rotate( mat4(1.0), rRotation, vec3(0.0, 1.0, 0.0) );
-	mat4 mTr	= translate( mat4(1.0), vec3(0, 280, 0) );
+	mat4 mTr	= translate( mat4(1.0), vec3(0, 300, 0) );
 	
 	m_Data.W()		= mR * mTr;
 	m_Data.Stack()	= m_pParent->GetNodeData().Stack() * m_Data.W();

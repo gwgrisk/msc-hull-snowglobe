@@ -1,14 +1,17 @@
-
+﻿
 #include "stdafx.h"
 
 #include "Tree.h"
 #include "VertexClass.h"
 #include "SceneGraph.h"
 
+#include "Vbo.h"
+#include "VertexClass.h"
+#include "EffectMgr.h"
+#include "Effect.h"
 #include "ShaderTypes.h"
 #include "ShaderDesc.h"
 #include "ShaderInputAttribute.h"
-#include "ShaderProgram.h"
 
 #include "Segment.h"
 #include "LSystem.h"
@@ -24,15 +27,21 @@
 #include <glm\glm.hpp>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <comdef.h>
+#include <algorithm>
 
+static int nFlipIt = 1;
 
 Tree::Tree() :
 	m_bInitialized				( false ),
 	m_CurrentShader				( WireFrame ),
-	m_pCurrentShader			( NULL ),
+	m_pEffect					( NULL ),
+	m_pVbo						( NULL ),
+	m_nVaoId					( 0 ),
 	m_rInitialSegLength			( 400.0f )
 {
+	
 }
 Tree::Tree( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 			const std::string & sBark, const std::string & sBump ) :
@@ -42,7 +51,9 @@ Tree::Tree( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_sBarkFile					( sBark ),
 	m_sBumpFile					( sBump ),
 	m_CurrentShader				( WireFrame ),
-	m_pCurrentShader			( NULL ),
+	m_pEffect					( NULL ),
+	m_pVbo						( NULL ),
+	m_nVaoId					( 0 ),
 	m_rInitialSegLength			( 400.0f )
 {
 	m_bInitialized = Initialize();
@@ -53,7 +64,9 @@ Tree::Tree( const Tree & r ) :
 	m_sBarkFile					( r.m_sBarkFile ),
 	m_sBumpFile					( r.m_sBumpFile ),
 	m_CurrentShader				( r.m_CurrentShader ),
-	m_pCurrentShader			( NULL ),
+	m_pEffect					( NULL ),
+	m_pVbo						( NULL ),
+	m_nVaoId					( 0 ),
 	m_rInitialSegLength			( 400.0f )
 {
 	m_bInitialized = Initialize();
@@ -89,28 +102,50 @@ bool Tree::Initialize()
 	using std::string;
 	using AntiMatter::AppLog;
 	using glm::vec3;
+	
+	InitShaderNames();
 
-	// Initialize a single Cylinder (IGeometry object), which is scaled and reused to draw
-	// each segment of the tree
-	m_Cylinder = Cylinder( 8, 13, 15.0f, 5.0f, 3.0f );
+	InitializeMtl();
 
-	m_material.Ka( vec3(0.3, 0.3, 0.3) );
-	m_material.Kd( vec3(0.7, 0.7, 0.7) );
-	m_material.Ks( vec3(0.0, 0.0, 0.0) );
-	m_material.Shininess( 1.0f );
-
-
-	if( ! InitializeLSystem() )
+	if( ! InitializeTextures() )
 	{
-		AppLog::Ref().LogMsg( "Tree::Initialize() failed to initialize the LSystem"	);
-
-		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to load textures", __FUNCTION__);
 		return false;
 	}
 
-	HRESULT hr;
+	if( ! InitializeGeometry() )
+	{
+		AppLog::Ref().LogMsg("%s initialize geometry failed for cylinder", __FUNCTION__ );
+		return false;
+	}	
+
+	if( ! GetShader( WireFrame ) )
+	{
+		AppLog::Ref().LogMsg("%s failed to initialize shaders for the tree", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVbo(m_Cylinder) )
+	{
+		AppLog::Ref().LogMsg("%s failed to initialize vbo", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVao() )
+	{
+		AppLog::Ref().LogMsg("%s failed to initialize vao", __FUNCTION__);
+		return false;		
+	}		
 	
-	hr = InitializeLTree();
+	if( ! InitializeLSystem() )
+	{
+		AppLog::Ref().LogMsg( "%s failed to initialize the LSystem", __FUNCTION__ );
+
+		Uninitialize();
+		return false;
+	}	
+
+	HRESULT hr = InitializeLTree();
 	if( ! SUCCEEDED(hr) )
 	{
 		AppLog::Ref().LogMsg(
@@ -120,21 +155,229 @@ bool Tree::Initialize()
 
 		Uninitialize();
 		return false;
-	}	
-
-	// load texture and bump maps for each of the cylinders
-	LoadTexture();
-	LoadBumpMap();
-
-
-	// Create the ShaderProgram objects
-	InitializeShaders();
+	}		
 
 	return true;
 }
 void Tree::Uninitialize()
 {
-	UninitializeShaders();
+	_ShaderNames.clear();
+	m_pEffect = NULL;
+
+	if( m_pVbo )
+	{
+		delete m_pVbo;
+		m_pVbo = NULL;	
+	}
+
+	m_nVaoId = 0;
+
+	m_LTree.erase( m_LTree.begin(), m_LTree.end() );
+	m_LSystem.Uninitialize();
+	m_Cylinder.Uninitialize();
+
+	m_rInitialSegLength = 400.0f;
+}
+
+void Tree::InitShaderNames()
+{
+	_ShaderNames.clear();
+	_ShaderNames.reserve(5);
+	_ShaderNames.push_back(std::string("wireframe"));
+	_ShaderNames.push_back(std::string("flat"));
+	_ShaderNames.push_back(std::string("smooth"));
+	_ShaderNames.push_back(std::string("smooth-textured"));
+	_ShaderNames.push_back(std::string("bump-textured"));
+}
+bool Tree::InitializeMtl()
+{
+	using glm::vec3;
+
+	m_material.Ka( vec3(0.3, 0.3, 0.3) );
+	m_material.Kd( vec3(0.7, 0.7, 0.7) );
+	m_material.Ks( vec3(0.0, 0.0, 0.0) );
+	m_material.Shininess( 1.0f );
+
+	return true;
+}
+bool Tree::InitializeGeometry()
+{
+	using AntiMatter::AppLog;
+	// Initialize a single Cylinder (IGeometry object), which is scaled and reused to draw
+	// each segment of the tree
+	// m_Cylinder = Cylinder( 8, 13, 15.0f, 5.0f, 3.0f );
+	m_Cylinder = Cylinder( 8, 6, 20.0f, 5.0f, 3.5f );
+
+	if( ! m_Cylinder.Initialized() )
+	{
+		AppLog::Ref().LogMsg("Cylinder::Initialize() failed, geometry primitive Sphere didn't initialize properly");
+		return false;
+	}
+
+	return true;
+}
+bool Tree::InitializeTextures()
+{
+	using AntiMatter::Shell::FileExists;
+
+	// load texture
+	if( FileExists(m_sBarkFile) )
+		m_texBark = Texture( m_sBarkFile.c_str(), false );
+
+	// load bump map
+	if( FileExists( m_sBumpFile ) )
+		m_texBump = Texture( m_sBumpFile.c_str(), false );
+
+
+	return (m_texBark.Initialized() && m_texBump.Initialized());
+}
+	
+bool Tree::InitializeVbo( IGeometry & geometry )
+{
+	using AntiMatter::AppLog;
+
+	m_pVbo = new Vbo<CustomVertex> ( 
+		geometry.VertCount(), 
+		geometry.Vertices(), 
+		geometry.IndexCount(), 
+		geometry.Indices() 
+	);
+
+	if( ! m_pVbo->Initialized() )
+	{
+		AppLog::Ref().LogMsg( "%s failed to initialize vertex buffer for object geometry", __FUNCTION__ );
+		return false;
+	}
+
+	return true;
+}
+bool Tree::InitializeVao()
+{
+	using AntiMatter::AppLog;
+
+	glUseProgram( m_pEffect->Id() );
+
+	glGenVertexArrays( 1, &m_nVaoId );
+	glBindVertexArray( m_nVaoId );	
+
+	glBindBuffer( GL_ARRAY_BUFFER,			m_pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	m_pVbo->IndexId() );
+	
+	// set the VBO attribute pointers
+	GLuint i = 0;
+	
+	for( auto n = m_pEffect->Attributes().begin(); n != m_pEffect->Attributes().end(); n ++ )
+	{	
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer( 
+			i, 
+			n->nFieldSize,
+			GL_FLOAT,
+			GL_FALSE,
+			n->nStride,
+			(GLfloat *) NULL + n->nFieldOffset
+		);
+		
+		i ++;
+	}
+	
+	glBindVertexArray(0);
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	glBindTexture( GL_TEXTURE0, 0 );
+	glBindTexture( GL_TEXTURE1, 0 );
+	
+
+	glUseProgram(0);
+
+	return true;
+}
+	
+
+bool Tree::GetShader( const eTreeShader e )
+{
+	using std::string;
+
+	m_CurrentShader = e;
+
+// warning C4482: nonstandard extension used: enum 'Effect::EffectBuildState' used in qualified name
+#pragma warning (push)
+#pragma warning (disable: 4482)
+	if( EffectMgr::Ref().Find( _ShaderNames[e], &m_pEffect ) )
+	{
+		if( m_pEffect->BuildState() == Effect::EffectBuildState::Linked )
+		{
+			// Get the shader variable value that'll allow us to select which lighting subroutine
+			// to use in the fragment shader code (one for the sun, one for the spotlights)
+			// m_nSunSub	= glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Sunlight" );
+			// m_nSpotsSub = glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
+			return true;
+		}
+	}
+#pragma warning (pop)
+
+	return false;
+}
+
+bool Tree::SetShaderArgs()
+{
+	using namespace glm;
+	using namespace std;
+	using namespace AntiMatter;
+
+	if( ! m_pEffect )
+		return false;
+	
+	// Select Shader
+	glUseProgram( m_pEffect->Id() );
+
+	// bind buffers
+	glBindVertexArray( m_nVaoId );
+	glBindBuffer( GL_ARRAY_BUFFER,			m_pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	m_pVbo->IndexId() );
+	glBindTexture( GL_TEXTURE_2D,			m_texBark.TextureId() );
+	glBindTexture( GL_TEXTURE_2D,			m_texBump.TextureId() );
+	
+	// Assign uniform variables
+	// lights
+	vector<Light*> lights = this->Graph()->Lights().Lights();
+	for( unsigned int x = 0; x < lights.size(); x++ )
+	{
+		vec4 lightPos	= lights[x]->Pos();
+		vec3 lightInt	= lights[x]->Intensity();
+		
+		vec4 eyeLightPos = this->Graph()->Cam().V() * lightPos;
+
+		stringstream ssP, ssI;
+			
+		ssP  << "lights[" << x << "].Position";
+		ssI << "lights[" << x << "].Intensity";		
+
+		string sPosition	= ssP.str();
+		string sIntensity	= ssI.str();		
+
+		m_pEffect->AssignUniformVec4( sPosition,	 eyeLightPos );
+		AppLog::Ref().OutputGlErrors();	
+		m_pEffect->AssignUniformVec3( sIntensity, lightInt );
+		AppLog::Ref().OutputGlErrors();	
+	}	
+
+	// textures
+	m_pEffect->AssignUniformSampler2D( string("tex"),		m_texBark.TextureId() );	
+	m_pEffect->AssignUniformSampler2D( string("texBump"),	m_texBump.TextureId() );	
+
+	// Material
+	m_pEffect->AssignUniformVec3(  string("Ka"),			m_material.Ka() );
+	m_pEffect->AssignUniformVec3(  string("Kd"),			m_material.Kd() );
+	m_pEffect->AssignUniformVec3(  string("Ks"),			m_material.Ks() );
+	m_pEffect->AssignUniformFloat( string("rShininess"),	m_material.Shininess() );	
+	
+	// set the colour for the branch being drawn (for debug purposes)
+	vec4 vColor[2] = { vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0) };
+	m_pEffect->AssignUniformVec4( string("wfColour"),	vColor[nFlipIt] );
+	AppLog::Ref().OutputGlErrors();
+	
+	return true;
 }
 
 bool Tree::InitializeLSystem()
@@ -155,7 +398,7 @@ bool Tree::InitializeLSystem()
 		vsRules.push_back( string("[3]-[3]+[3]") );
 		vsRules.push_back( string("FF+F") );
 
-		m_LSystem = LSystem( 12, 10.0f, 15.0f, vec3(0.0, 50.0, 0.0), vsRules );
+		m_LSystem = LSystem( 6, 10.0f, 20.0f, vec3(0.0, 50.0, 0.0), vsRules );
 
 		if( m_LSystem.Initialized() )
 			m_LSystem.PersistSet( g_Cfg.LSystemCfg() );
@@ -171,7 +414,7 @@ HRESULT Tree::InitializeLTree()
 		return S_OK;
 
 	if( ! m_LSystem.Initialized() )
-		return E_UNEXPECTED;	
+		return E_UNEXPECTED;
 
 	Segment * pNextSeg = m_LSystem.LSystemData();
 	
@@ -186,20 +429,28 @@ HRESULT Tree::InitializeLTree()
 }
 void Tree::AddSegChildren( Segment* pSeg )
 {
-	if( pSeg->ChildSegs().size() > 0 )
+	if( ! pSeg )
+		return;
+
+	Segment::ChildSegments & cs = pSeg->ChildSegs();
+
+	if( cs.size() > 0 )
 	{
-		for( ChildSegments::iterator x = pSeg->ChildSegs().begin(); x != pSeg->ChildSegs().end(); x ++ )
-		{
-			Segment* pNext = *x;
-			AddSegChildren(pNext);
-			AddSegment(pNext);
-		}
+		std::for_each( cs.begin(), cs.end(),
+
+			[&]( Segment* pNext )
+			{
+				AddSegChildren(pNext);
+				AddSegment(pNext);
+			}
+		);		
+
 		AddSegment(pSeg);
 	}
 	else
 	{
 		AddSegment(pSeg);
-	}		
+	}
 }
 void Tree::AddSegment( Segment* pSeg )
 {
@@ -213,222 +464,7 @@ void Tree::AddSegment( Segment* pSeg )
 	m_LTree[nGeneration].push_back(pSeg);
 }
 
-bool Tree::SetPerVertexColour()
-{
-	return true;
-}
-bool Tree::LoadTexture()
-{
-	if( ! AntiMatter::Shell::FileExists( m_sBarkFile ) )
-		return false;
 
-	m_texBark = Texture( m_sBarkFile.c_str(), false );			
-	
-	return m_texBark.Initialized();
-}
-bool Tree::LoadBumpMap()
-{
-	if( ! AntiMatter::Shell::FileExists( m_sBumpFile ) )
-		return false;
-
-	m_texBump = Texture( m_sBumpFile.c_str(), false );
-
-	return m_texBump.Initialized();
-}
-	
-bool Tree::InitializeShaders()
-{
-	using AntiMatter::AppLog;
-	using std::string;
-
-	// iterate through each of the TreeShaderz
-	// create a ShaderProgram for each
-	// store the corresponding ShaderProgram address in the TreeShaderz data structure
-	// elect a "current" shader (set its address in m_pCurrentShader)
-	
-	for( int n = WireFrame; n < BumpTextured; n ++ )
-	{
-		ShaderProgram * pNext = NULL;
-		string			sVert = m_Shaderz.Vert( (eTreeShaders)n );
-		string			sFrag = m_Shaderz.Frag( (eTreeShaders)n );
-
-		if( CreateShaderProgram( sVert, sFrag, &pNext ) )
-		{
-			m_Shaderz.ShaderProg( (eTreeShaders)n, pNext);
-
-			if( n == WireFrame )
-				m_pCurrentShader = pNext;
-		}
-		else
-		{
-			AppLog::Ref().LogMsg("Tree::InitializeShaders() failed to initialize shader %s", sVert.c_str() );
-			// ATLASSERT(0);
-		}
-	}
-
-	return true;
-}
-void Tree::UninitializeShaders()
-{
-	// iterate through each of the TreeShaderz
-	// delete the memory allocated for each ShaderProgram
-	// smart pointer not allowed in this project :S
-	// this code is replicated in the TreeShaderz::Uninitialize() function
-	
-	for( int n = WireFrame; n < BumpTextured; n ++ )
-	{
-		ShaderProgram* pNext = m_Shaderz.ShaderProg( (eTreeShaders) n );
-
-		if( pNext )
-		{
-			delete pNext;
-			pNext = NULL;
-			m_Shaderz.ShaderProg( (eTreeShaders)n, NULL );
-		}
-	}
-}
-
-bool Tree::CreateShaderProgram( const std::string & sVert, const std::string & sFrag, ShaderProgram ** ppShaderProg )
-{
-	// Create a ShaderProgram object and initialize it
-
-	using namespace std;
-	using namespace AntiMatter;
-
-	vector<ShaderDesc>				vDescs;
-	vector<ShaderInputAttribute>	vArgs;
-	
-	ShaderDesc						VertShaderDesc;
-	ShaderDesc						PixShaderDesc;
-	
-	ShaderInputAttribute			VertPosArg;
-	ShaderInputAttribute			VertTextureArg;
-	ShaderInputAttribute			VertNormalArg;
-	ShaderInputAttribute			VertColorArg;
-
-	VertShaderDesc.sFileName	= g_Cfg.ShadersDir() + sVert;
-	PixShaderDesc.sFileName		= g_Cfg.ShadersDir() + sFrag;
-
-	VertShaderDesc.nType		= Vertex;
-	PixShaderDesc.nType			= Fragment;
-
-	VertPosArg.sFieldName		= string("VertexPosition");
-	VertPosArg.nFieldSize		= 3;	// not bytes, num of components
-	VertPosArg.nFieldOffset		= 0;
-	VertPosArg.nStride			= sizeof(CustomVertex);
-
-	VertNormalArg.sFieldName	= string("VertexNormal");
-	VertNormalArg.nFieldSize	= 3;
-	VertNormalArg.nFieldOffset	= 3;
-	VertNormalArg.nStride		= sizeof(CustomVertex);	
-
-	VertTextureArg.sFieldName	= string("VertexTexCoord");
-	VertTextureArg.nFieldSize	= 2;
-	VertTextureArg.nFieldOffset	= 6;
-	VertTextureArg.nStride		= sizeof(CustomVertex);
-
-	VertColorArg.sFieldName		= string("VertexColour");
-	VertColorArg.nFieldSize		= 4;
-	VertColorArg.nFieldOffset	= 8;
-	VertColorArg.nStride		= sizeof(CustomVertex);
-
-	vDescs.push_back ( VertShaderDesc );
-	vDescs.push_back ( PixShaderDesc );
-
-	vArgs.push_back ( VertPosArg );	
-	vArgs.push_back ( VertNormalArg );	
-	vArgs.push_back ( VertTextureArg );
-
-	*ppShaderProg = new ShaderProgram( m_Cylinder.Vertices(), m_Cylinder.Indices(), m_Cylinder.VertCount(), m_Cylinder.IndexCount(), vDescs, vArgs );
-	if( ! (*ppShaderProg)->Initialized() )
-	{
-		delete *ppShaderProg;
-		*ppShaderProg = NULL;
-		return false;
-	}
-
-	return true;
-}
-void Tree::SetShaderArgs()
-{
-	using namespace glm;
-	using namespace std;
-	using namespace AntiMatter;
-
-	if( ! m_pCurrentShader )
-		return;
-
-	// I only put these into variables for debug purposes
-	GLuint nShaderProgId	= m_pCurrentShader->ShaderProgId();
-	GLuint nVaoId			= m_pCurrentShader->VaoId();
-	GLuint nVboId			= m_pCurrentShader->VboId();
-	GLuint nVboIndexId		= m_pCurrentShader->VboIndexId();
-	GLuint nTexBarkId		= m_texBark.TextureId();
-	GLuint nTexBumpId		= m_texBump.TextureId();
-
-	// Indicate which ShaderProgram to use	
-	glUseProgram( nShaderProgId );
-
-	// bind buffers
-	glBindVertexArray( nVaoId );							// vertex array object
-	glBindBuffer( GL_ARRAY_BUFFER,			nVboId );		// vertices
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	nVboIndexId );	// indices	
-
-
-	// Assign uniform variables
-	// lights
-	vector<Light*> lights = this->Graph()->Lights().Lights();
-	for( unsigned int x = 0; x < lights.size(); x++ )
-	{
-		vec4 lightPos	= lights[x]->Pos();
-		vec3 lightInt	= lights[x]->Intensity();
-		
-		vec4 eyeLightPos = this->Graph()->Cam().V() * this->GetNodeData().W() * lightPos;
-
-		stringstream ssP, ssI;
-			
-		ssP  << "lights[" << x << "].Position";
-		ssI << "lights[" << x << "].Intensity";		
-
-		string sPosition	= ssP.str();
-		string sIntensity	= ssI.str();		
-
-		m_pCurrentShader->AssignUniformVec4( sPosition,	 eyeLightPos );
-		AppLog::Ref().OutputGlErrors();	
-		m_pCurrentShader->AssignUniformVec3( sIntensity, lightInt );
-		AppLog::Ref().OutputGlErrors();	
-	}	
-
-	// textures				
-	m_pCurrentShader->AssignUniformSampler2D( string("tex"), nTexBarkId );
-	AppLog::Ref().OutputGlErrors();	
-	m_pCurrentShader->AssignUniformSampler2D( string("texBump"), nTexBumpId );
-	AppLog::Ref().OutputGlErrors();	
-
-	// Material
-	m_pCurrentShader->AssignUniformVec3(  string("Ka"),			m_material.Ka() );
-	m_pCurrentShader->AssignUniformVec3(  string("Kd"),			m_material.Kd() );
-	m_pCurrentShader->AssignUniformVec3(  string("Ks"),			m_material.Ks() );
-	m_pCurrentShader->AssignUniformFloat( string("rShininess"),	m_material.Shininess() );
-	AppLog::Ref().OutputGlErrors();		
-	
-	/*
-	// matrices
-	glm::mat4 mView			= this->Graph()->Cam().V();
-	glm::mat4 mModel		= m_pParent->GetNodeData().W() * m_Data.W();
-	glm::mat4 mModelView	= mView * mModel;
-
-	glm::mat3 mNormal(mModelView);
-	mNormal = glm::transpose(mNormal._inverse());
-
-	m_pCurrentShader->AssignUniformMat4( string("mModelView"),	mModelView );
-	m_pCurrentShader->AssignUniformMat3( string("mNormal"),		mNormal );
-	m_pCurrentShader->AssignUniformMat4( string("mMVP"),		m_Data.MVP() );	
-		
-	AppLog::Ref().OutputGlErrors();
-	*/
-}
-	
 HRESULT Tree::Update( const float & rSecsDelta )
 {
 	m_Data.Stack()	= m_pParent->GetNodeData().Stack() * m_Data.W();
@@ -444,6 +480,17 @@ HRESULT Tree::Update( const float & rSecsDelta )
 }
 HRESULT Tree::PreRender()
 {
+	using AntiMatter::AppLog;
+
+	AppLog::Ref().OutputGlErrors();
+
+	if( ! m_pEffect )
+		return E_POINTER;	
+
+	SetShaderArgs();	
+
+	glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
+
 	return S_OK;
 }
 HRESULT Tree::Render()
@@ -460,65 +507,54 @@ HRESULT Tree::Render()
 	for( LTree::iterator n = m_LTree.begin(); n != m_LTree.end(); n ++ )
 	{
 		Generation i = (*n);
+
+		// flip the branch colour for the next generation
+		nFlipIt = 1-nFlipIt;
 	
 		for( Generation::iterator j = i.begin(); j != i.end(); j ++ )
 		{
-			// get the next seg
-			Segment * pNextSeg = *j;
-
-			if( pNextSeg->Generation() >= 2 )
-				break;
-
-			// compute the scale for this segment
-			float	rGenScaler;
-			float	rSegScaler;
-			int		nGeneration	= pNextSeg->Generation();
-			mat4	mW			= mat4(1.0);
-			vec3	vPosition;
-
-			switch( nGeneration )
-			{
-				case 0:  rGenScaler = 1.0f;  break;
-				case 1:  rGenScaler = 0.65f; break;
-				case 2:  rGenScaler = 0.55f;  break;
-				default: rGenScaler = 0.40f; break;
-			}
+			// Get the next seg
+			Segment *		pSeg		= *j;
+			const Segment * pParent		= pSeg->Parent();
 			
-			rSegScaler = ( m_rInitialSegLength / m_Cylinder.Length() ) * rGenScaler;
-			pNextSeg->Length( rSegScaler * m_rInitialSegLength );
-			
-
-			// compute the position for this segment
+			// compute the translation delta required to translate to the end of the parent segment
+			real rParentLength;
+			vec3 vTranslation;
 			vec3 vPos;
-			if( nGeneration <= 1 )
+
+			if( pSeg->Generation()  > 0 )
 			{
-				// Compute position from the tree's model matrix, then store it back into the segment
-				mat4 mTmp	= m_pParent->GetNodeData().W() * m_Data.W();
-				vPosition	= vec3( mTmp[3][0], mTmp[3][1], mTmp[3][2] );
-				vPos		= pNextSeg->Position();
-				vPosition	= vec3(0,1,0);
-				pNextSeg->Position( vPosition );
+				rParentLength		= pParent->Scale() * m_Cylinder.Length();
+				vTranslation		= pParent->Orientation() * rParentLength;
+				vPos				= pParent->Pos() + vTranslation;
+
+				pSeg->PosDelta( vTranslation );
+				pSeg->Pos( vPos );
 			}
 			else
 			{
-				// read parents position, then translate to the end of the parent
-				// scale the direction of the parent branch by the length of the parent
-				vPosition	= glm::normalize( pNextSeg->Parent()->Position() ) * (pNextSeg->Parent()->Length());
-				vPos		= pNextSeg->Position();
+				mat4 mTmp			= m_Data.W();
+				vPos				= vec3( mTmp[3][0], mTmp[3][1], mTmp[3][2] );
 
-				pNextSeg->Position( vPos );
-				mW	= glm::translate( mW, vPos );
+				pSeg->Orientation( vec3(0,1,0) );
+				pSeg->PosDelta( vec3(0,0,0) );
+				pSeg->Pos( vPos );
 			}
-			
-			mW *= pNextSeg->W();			
-			mW = glm::scale( mW, vec3(rSegScaler) );			
+
+			// combine trans, rot, scale into a matrix
+			mat4 mW(1.0f);
+
+			mW *= CalcSegOrientationMatrix( pSeg->Orientation(), vPos );
+				
+			if( pSeg->Generation()  > 0 )
+				mW *= glm::translate( mat4(1.0f), pSeg->PosDelta() );			
+
+			//mW *= glm::scale( mat4(1.0f), glm::vec3(pSeg->Scale()) );
 			
 
-			// draw the branch
-			if( m_pCurrentShader )
-			{
-				SetShaderArgs();
-				
+			// draw the branch						
+			if( m_pEffect )
+			{				
 				// matrices
 				mat4 mModelView = m_pGraph->Cam().V() * m_Data.Stack() * mW;
 				mat4 mMVP		= m_pGraph->Proj().P() * m_pGraph->Cam().V() * m_Data.Stack() * mW;
@@ -526,22 +562,18 @@ HRESULT Tree::Render()
 				mat3 mNormal(mModelView);
 				mNormal = glm::transpose(mNormal._inverse());
 
-				m_pCurrentShader->AssignUniformMat4( string("mModelView"),	mModelView );
-				m_pCurrentShader->AssignUniformMat3( string("mNormal"),		mNormal );
-				m_pCurrentShader->AssignUniformMat4( string("mMVP"),		mMVP );
+				m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
+				m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+				m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
 
 				glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
-				
-				glDrawElements( GL_TRIANGLE_STRIP, m_Cylinder.TriCount(), GL_UNSIGNED_INT, ((char*)NULL +  0) );
 
-				glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-				AppLog::Ref().OutputGlErrors();
-
-				glBindTexture( GL_TEXTURE_2D,			0 );
-				glBindBuffer( GL_ARRAY_BUFFER,			0 );
-				glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	0 );
-				glBindVertexArray(0);
-				glUseProgram(0);
+				glDrawElements(
+					GL_TRIANGLE_STRIP,
+					(((m_Cylinder.Slices()+1) * 2) * m_Cylinder.Stacks()),
+					GL_UNSIGNED_SHORT,
+					(GLvoid*)m_Cylinder.Indices()[0]
+				);
 			}
 		}
 	}	
@@ -550,6 +582,18 @@ HRESULT Tree::Render()
 }
 HRESULT Tree::PostRender()
 {
+	using AntiMatter::AppLog;
+
+	AppLog::Ref().OutputGlErrors();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBindTexture( GL_TEXTURE_2D,			0 );
+	glBindBuffer( GL_ARRAY_BUFFER,			0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	0 );
+	glBindVertexArray(0);
+	glUseProgram(0);
+
+	AppLog::Ref().OutputGlErrors();
 	return S_OK;
 }
 HRESULT Tree::DrawItem()
@@ -562,4 +606,45 @@ HRESULT Tree::DrawItem()
 	PostRender();
 
 	return S_OK;
+}
+
+glm::mat4 Tree::CalcSegOrientationMatrix( const glm::vec3 & vOrientation, const glm::vec3 & vPos  )
+{
+	// I'm attempting to create a rotation matrix that represents the 
+	// vOrientation matrix by splitting orientation vec3 into two 
+	// rotations.  rotation about the x and z axes respectively.
+
+	// here's the transformation matrix
+	// |cosθ cosφ   -sinθ   -cosθ sinφ|
+	// |sinθ cosφ    cosθ   -sinθ sinφ|
+	// |   sinφ       0         cosφ  |
+
+	UNREFERENCED_PARAMETER(vPos);
+    
+	const glm::vec3 & v = vOrientation;
+
+	/* Find cosφ and sinφ */
+    float c1 = sqrt(v.x * v.x + v.y * v.y);
+    float s1 = v.z;
+
+    /* Find cosθ and sinθ; if gimbal lock, choose (1,0) arbitrarily */
+    float c2 = c1 ? v.x / c1 : 1.0f;
+    float s2 = c1 ? v.y / c1 : 0.0f;
+	
+
+		
+	return glm::mat4 (
+		v.x,	-s2,	-s1*c2,		0,
+		v.y,	c2,		-s1*c2,		0,
+		v.z,	0,		c1,			0,
+		0,		0,		0,			1
+	);
+	/*
+	return glm::mat4 (
+		v.x,	-s2,	-s1*c2,		0,
+		v.y,	c2,		-s1*c2,		0,
+		v.z,	0,		c1,			0,
+		vPos.x,	vPos.y,	vPos.z,		1
+	);
+	*/
 }

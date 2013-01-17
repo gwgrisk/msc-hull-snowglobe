@@ -10,8 +10,8 @@
   <Class Name="CustomVertex" Collapsed="true">
     <Position X="13.25" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAADAAAAAAAAAAAAAAAAQCAAQAAAAgAEAABAA=</HashCode>
-      <FileName>CustomVertex.h</FileName>
+      <HashCode>AAAAAAAAADAAAAAAAAAAAAAAAAQAAAQAAAAAAEAABAA=</HashCode>
+      <FileName>VertexClass.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Shader" Collapsed="true">
@@ -52,7 +52,7 @@
   <Class Name="Material" Collapsed="true">
     <Position X="14" Y="2.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEAIAAAAAQAEAAAAAAAAAAAAAAAYACQAAAAAAAABAAA=</HashCode>
+      <HashCode>AEQIAAEAgQAEAAAAAAAAAAQAQACYACUAEAAIBAABAAA=</HashCode>
       <FileName>Material.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -97,7 +97,7 @@
   <Class Name="Globe" Collapsed="true">
     <Position X="8.5" Y="1.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>gAQAFAAAALAAC0AgAEAAABCAECAAAEABEBAgAAACgBg=</HashCode>
+      <HashCode>gAQAFAAAAKAAg0CgAEAAABCAEAAKAMAAEBBgAABCgFg=</HashCode>
       <FileName>Globe.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -106,13 +106,6 @@
     <TypeIdentifier>
       <HashCode>AgQgEAAAAAABAUAAAGAAMhACEEAQQECAABLgAEACAIg=</HashCode>
       <FileName>House.h</FileName>
-    </TypeIdentifier>
-  </Class>
-  <Class Name="Pond" Collapsed="true">
-    <Position X="8.5" Y="2.75" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAQCFAABAAAAAUAAAUQEAAAAMAAYAEABUBAgAAgDAAg=</HashCode>
-      <FileName>Pond.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Snow" Collapsed="true">
@@ -128,7 +121,7 @@
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAQNFhAAAgCAQQgkAEQAICQAkAgAAEAAABAgQALCCAg=</HashCode>
+      <HashCode>AAQJFhAAAgCAQQgEAEQBICQAEAgCAMAAIBAgQALCCAg=</HashCode>
       <FileName>Tree.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -156,7 +149,7 @@
   <Class Name="Light" Collapsed="true">
     <Position X="8.5" Y="6.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEQAIAgCCCAAAUAAAGAAAgAIAACIAmQBIRAgAAACAAg=</HashCode>
+      <HashCode>AEQAJAgCCCAAgUAgAGAAAhAIAACKAuQAIRBgAABCAEg=</HashCode>
       <FileName>Light.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -191,14 +184,14 @@
   <Class Name="LSystem" Collapsed="true">
     <Position X="6.25" Y="1.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AgAIEAABAiABAQACQgIAAAAAEIQAAAAECEogBAAAIAg=</HashCode>
+      <HashCode>AgAIEAABAiABAQACQgIAAAAAEIQAIAAECEogBABAIAg=</HashCode>
       <FileName>LSystem.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Segment" Collapsed="true">
     <Position X="6.25" Y="3.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>QAAAAAgAIAAAAAAwAQEAQABAUAAAAAAAAACgQAAIABw=</HashCode>
+      <HashCode>EAQAAAgAIQAAESAAEAMAQAFEAACAAAgIAoQwAAAAARA=</HashCode>
       <FileName>Segment.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -242,13 +235,6 @@
   </Class>
   <Class Name="SeasonalTimeline" Collapsed="true">
     <Position X="0.75" Y="3" Width="2" />
-    <NestedTypes>
-      <Enum Name="SeasonalTimeline::Seasons" Collapsed="true">
-        <TypeIdentifier>
-          <NewMemberFileName>SeasonalTimeline.h</NewMemberFileName>
-        </TypeIdentifier>
-      </Enum>
-    </NestedTypes>
     <TypeIdentifier>
       <HashCode>CgQgAACAAAAAAACKAAAgEAAJEAiAAAAAAAAgAAgAAAA=</HashCode>
       <FileName>SeasonalTimeline.h</FileName>
@@ -264,14 +250,14 @@
   <Class Name="Effect" Collapsed="true">
     <Position X="4" Y="4.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>BAQiEACAASoAgQAAEAAAAAQQEAAAgAAAGBAgQgBQKAg=</HashCode>
+      <HashCode>BAQiEACAASoAgQAQEAAAAAQQEAAAgAAAGBAwQgBQKAg=</HashCode>
       <FileName>Effect.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="EffectMgr" Collapsed="true">
     <Position X="6.25" Y="4.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAIAACAAIAAAAQAAAAAAAAAAEAAIAAAAAACgAAgAAAg=</HashCode>
+      <HashCode>AAIAECAAIAAAAQAAAAAAAAAAEAAIAAAAAACgAAgAAAg=</HashCode>
       <FileName>EffectMgr.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -315,27 +301,6 @@
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SceneGraph.h</FileName>
-    </TypeIdentifier>
-  </Typedef>
-  <Typedef Name="RulesDictionary" Collapsed="true">
-    <Position X="5" Y="12.75" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>LSystem.h</FileName>
-    </TypeIdentifier>
-  </Typedef>
-  <Typedef Name="RItr" Collapsed="true">
-    <Position X="3.25" Y="12.75" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>LSystem.h</FileName>
-    </TypeIdentifier>
-  </Typedef>
-  <Typedef Name="ChildSegments" Collapsed="true">
-    <Position X="8.5" Y="12" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>Segment.h</FileName>
     </TypeIdentifier>
   </Typedef>
   <Enum Name="ShaderType" Collapsed="true">

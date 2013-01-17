@@ -24,7 +24,7 @@
 #include <AntiMatter\constants.h>
 
 #include <glm\glm.hpp>
-
+#include "Simulation.h"
 
 Globe::Globe() : 
 	IGraphNode			( NULL, NULL, std::string("globe") ),
@@ -165,10 +165,10 @@ void Globe::InitializeMaterial()
 	using glm::vec3;
 
 	// material
-	m_material.Ka(vec3(0.1f, 0.1f, 0.1f));
+	m_material.Ka(vec3(0.0f, 0.0f, 0.0f));
 	m_material.Kd(vec3(0.2f, 0.2f, 0.2f));
-	m_material.Ks(vec3(0.8f, 0.8f, 0.8f));
-	m_material.Shininess( 4.0f );	
+	m_material.Ks(vec3(1.0, 1.0, 1.0));
+	m_material.Shininess( 32.0f );
 }
 bool Globe::InitializeTextures()
 {
@@ -198,16 +198,15 @@ bool Globe::InitializeTextures()
 }
 bool Globe::SetPerVertexColour()
 {
-	// copies the specified colour to each (and every!) vertex!!!
-	// is there _any_ point to this?!
+	// copies the specified colour to each vertex
 	CustomVertex* pVertices  =*(m_Sphere.Vertices());
 	
 	for( int n = 0; n < m_Sphere.VertCount(); n ++ )
 	{
-		pVertices[n].m_colour[0] = m_vColour.r;
-		pVertices[n].m_colour[1] = m_vColour.g;
-		pVertices[n].m_colour[2] = m_vColour.b;
-		pVertices[n].m_colour[3] = m_vColour.a;
+		pVertices[n].m_Colour[0] = m_vColour.r;
+		pVertices[n].m_Colour[1] = m_vColour.g;
+		pVertices[n].m_Colour[2] = m_vColour.b;
+		pVertices[n].m_Colour[3] = m_vColour.a;
 	}
 	
 	return true;
@@ -284,7 +283,13 @@ bool Globe::GetShader()
 	if( EffectMgr::Ref().Find( string("globe"), &m_pEffect ) )
 	{
 		if( m_pEffect->BuildState() == Effect::EffectBuildState::Linked )
+		{
+			// Get the shader variable value that'll allow us to select which lighting subroutine
+			// to use in the fragment shader code (one for the sun, one for the spotlights)
+			m_nSunSub	= glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Sunlight" );
+			m_nSpotsSub = glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
 			return true;
+		}
 	}
 #pragma warning (pop)
 
@@ -294,6 +299,8 @@ bool Globe::SetUniforms()
 {
 	using namespace AntiMatter;
 	using namespace glm;
+	using std::vector;
+	using std::stringstream;
 	using std::string;
 
 	if( ! m_pEffect )
@@ -301,6 +308,12 @@ bool Globe::SetUniforms()
 
 	// Indicate which ShaderProgram to use
 	glUseProgram( m_pEffect->Id() );
+	
+	// indicate which lighting subroutine to use in the shader
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotsSub );
 
 	// bind buffers		
 	glBindVertexArray( m_nVaoId );
@@ -309,7 +322,47 @@ bool Globe::SetUniforms()
 	// ensure no texture selected (might've left one selected from previous object)
 	glBindTexture( GL_TEXTURE_2D, 0 );	
 
+
 	// Assign uniform variables	
+
+	// vViewPosition (camera position transformed into view space)	
+	vec3 vCamPos = vec3(Graph()->Cam().V() * vec4( Graph()->Cam().Pos(), 1.0));
+	m_pEffect->AssignUniformVec3( string("vViewPosition"), vCamPos );
+	
+	// lights - light[0-3] = spotlights, light[4] = sun
+	vector<Light*> lights = this->Graph()->Lights().Lights();
+	for( unsigned int x = 0; x < lights.size(); x++ )
+	{
+		glm::vec4 vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
+		glm::vec3 la		= lights[x]->La();
+		glm::vec3 ld		= lights[x]->Ld();
+		glm::vec3 ls		= lights[x]->Ls();
+
+		stringstream ssP, ssLa, ssLd, ssLs;			
+			
+		ssP  << "lights[" << x << "].Position";
+		ssLa << "lights[" << x << "].La";
+		ssLd << "lights[" << x << "].Ld";
+		ssLs << "lights[" << x << "].Ls";
+
+		string sPosition	= ssP.str();
+		string sLa			= ssLa.str();
+		string sLd			= ssLd.str();
+		string sLs			= ssLs.str();
+
+		m_pEffect->AssignUniformVec4( sPosition, vLightPos );
+		m_pEffect->AssignUniformVec3( sLa, la );
+		m_pEffect->AssignUniformVec3( sLd, ld );
+		m_pEffect->AssignUniformVec3( sLs, ls );
+	}
+	AppLog::Ref().OutputGlErrors();
+
+	// material data
+	m_pEffect->AssignUniformVec3(  string("material.Ka"),			m_material.Ka() );
+	m_pEffect->AssignUniformVec3(  string("material.Kd"),			m_material.Kd() );
+	m_pEffect->AssignUniformVec3(  string("material.Ks"),			m_material.Ks() );
+	m_pEffect->AssignUniformFloat( string("material.rShininess"),	m_material.Shininess() );
+
 	glm::mat4 mView			= this->Graph()->Cam().V();
 	glm::mat4 mModel		= m_Data.W();
 	glm::mat4 mModelView	= mView * mModel;
@@ -317,12 +370,9 @@ bool Globe::SetUniforms()
 	glm::mat3 mNormal(mModelView);		
 	mNormal = glm::transpose(mNormal._inverse());
 	
-	m_pEffect->AssignUniformFloat(	string("rFallOff"),		0.995f );
 	m_pEffect->AssignUniformMat4(	string("mModelView"),	mModelView );	
 	m_pEffect->AssignUniformMat4(	string("mMVP"),			m_Data.MVP() );
 	m_pEffect->AssignUniformMat3(	string("mNormal"),		mNormal );
-
-	AppLog::Ref().OutputGlErrors();
 
 	return true;
 }
@@ -348,20 +398,21 @@ HRESULT Globe::PreRender()
 	// that aside, the sphere geometry is rendered as two triangle fans
 	// and a series of triangle strips.
 
+	using AntiMatter::AppLog;
+
+	AppLog::Ref().OutputGlErrors();
+
 	if( ! m_pEffect )
 		return E_POINTER;
-
-	using namespace AntiMatter;
 	
 	if( m_tex.Initialized() )
 		glBindTexture( GL_TEXTURE_2D, m_tex.TextureId() );
 	else
 		glBindTexture( GL_TEXTURE_2D, 0 );
 	
-
 	glDisable( GL_DEPTH_TEST );
-	
 	SetUniforms();
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	return S_OK;
@@ -378,7 +429,7 @@ HRESULT Globe::Render()
 	glDrawElements( 
 		GL_TRIANGLE_FAN, 
 		nSlices+2,
-		GL_UNSIGNED_INT, 
+		GL_UNSIGNED_SHORT, 
 		m_Sphere.Indices()
 	);
 
@@ -388,7 +439,7 @@ HRESULT Globe::Render()
 		glDrawElements(
 			GL_TRIANGLE_STRIP,
 			((nSlices+1)*2),
-			GL_UNSIGNED_INT,
+			GL_UNSIGNED_SHORT,
 			&(m_Sphere.Indices())[ nSlices+2+n*(nSlices+1)*2 ]
 		);
 	}
@@ -397,17 +448,17 @@ HRESULT Globe::Render()
 	glDrawElements( 
 		GL_TRIANGLE_FAN, 
 		nSlices+2,
-		GL_UNSIGNED_INT, 
+		GL_UNSIGNED_SHORT, 
 		&(m_Sphere.Indices())[ nSlices+2+(nStacks-2)*(nSlices+1)*2 ]
 	);
-
-	AppLog::Ref().OutputGlErrors();
 
 	return S_OK;
 }
 HRESULT Globe::PostRender()
 {
 	using AntiMatter::AppLog;
+
+	AppLog::Ref().OutputGlErrors();
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindTexture( GL_TEXTURE_2D,			0 );

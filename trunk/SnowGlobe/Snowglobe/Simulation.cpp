@@ -86,6 +86,7 @@ void Simulation::OnCreate()
 		return;
 	}
 
+	SetFullscreen(true);
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	SwapBuffers();
 
@@ -218,6 +219,19 @@ void Simulation::OnKeyboard(int key, bool down)
 		SeasonalTimeline::Ref().Speed(5.0f);
 		break;
 
+	case 119:// F8
+		if( ! down )
+		{
+			SceneLights::LightsState ls =  m_pScene->Lights().GetLightsState();
+
+			if( ls == SceneLights::LightsState::sun )
+				m_pScene->Lights().SetLightsState( SceneLights::LightsState::spots );
+			else
+				m_pScene->Lights().SetLightsState( SceneLights::LightsState::sun );
+		}
+		
+		break;
+
 	default:
 		{
 			switch( tolower(key) )
@@ -242,9 +256,20 @@ void Simulation::OnKeyboard(int key, bool down)
 					InputMgr::Ref().Keybd().Back( down ? KeyData::KeyDown : KeyData::KeyUp );
 					break;
 
+				case 'a':
+					InputMgr::Ref().Keybd().Left( down ? KeyData::KeyDown : KeyData::KeyUp );
+					break;
+
+				case 'd':
+					InputMgr::Ref().Keybd().Right( down ? KeyData::KeyDown : KeyData::KeyUp );
+					break;
+
 				case 'f':
-					m_bFullScreen = false;
-					SetFullscreen(false);
+					if( ! down )
+					{
+						m_bFullScreen = !m_bFullScreen;
+						SetFullscreen(m_bFullScreen);
+					}					
 					break;
 
 				case 'q':	// Quit

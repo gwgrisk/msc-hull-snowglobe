@@ -362,7 +362,10 @@ void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBum
 
 	// Indicate which ShaderProgram to use	
 	glUseProgram( nShaderProgId );
-	glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotlightSub );
 
 	// bind buffers
 	glBindVertexArray( nVaoId );							// vertex array object
@@ -381,7 +384,7 @@ void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBum
 	vector<Light*> lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		glm::vec4 vLightPos	= Graph()->Cam().V() * m_Data.W() * lights[x]->Pos();
+		glm::vec4 vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
 		glm::vec3 la		= lights[x]->La();
 		glm::vec3 ld		= lights[x]->Ld();
 		glm::vec3 ls		= lights[x]->Ls();		
@@ -414,7 +417,7 @@ void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBum
 	AppLog::Ref().OutputGlErrors();	
 
 	
-	// textures				
+	// textures	
 	pShader->AssignUniformSampler2D( string("tex"),		nTexId );		
 	pShader->AssignUniformSampler2D( string("texBump"),	nBumpId );
 	AppLog::Ref().OutputGlErrors();	
@@ -423,7 +426,7 @@ void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBum
 	// matrices
 	glm::mat4 mView			= this->Graph()->Cam().V();
 	glm::mat4 mModel		= m_Data.W();
-	glm::mat4 mModelView	= mModel * mView;
+	glm::mat4 mModelView	= mView * mModel;
 
 	glm::mat3 mNormal(mModelView);
 	mNormal = glm::transpose(mNormal._inverse());
@@ -538,7 +541,7 @@ HRESULT House::DrawPrimitive( ShaderProgram* pShader, IGeometry* pShape, glm::ma
 
 	// execute the shader program
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDrawElements( GL_TRIANGLES, pShape->IndexCount(), GL_UNSIGNED_INT, ((char*)NULL) );
+	glDrawElements( GL_TRIANGLES, pShape->IndexCount(), GL_UNSIGNED_SHORT, ((char*)NULL) );
 
 	AppLog::Ref().OutputGlErrors();	
 	

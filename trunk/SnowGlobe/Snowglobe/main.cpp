@@ -71,9 +71,7 @@ public:
 		{
 			AppLog::Ref().LogMsg( "%s failed to allocate heap for the simulation, halting execution\r\n", __FUNCTION__ );
 			return;
-		}
-
-		
+		}		
 	}
 	~GxApp()
 	{	

@@ -62,7 +62,7 @@ bool SceneGraph::InitializeGraph()
 	using glm::rotate;
 
 	// just calling to test the WavefrontObj parser
-	//WavefrontObj j( g_Cfg.AssetsDir() + string("obj\\house\\house.obj") );
+	// WavefrontObj j( g_Cfg.AssetsDir() + string("obj\\house\\house.obj") );
 		
 
 	// Initialize the SceneLights collection (lights need access to the SceneGraph in order to initialize)
@@ -107,30 +107,33 @@ bool SceneGraph::InitializeGraph()
 	}
 
 	m_map.insert( ActorIdPair( pTerrain->Id(), pTerrain) );
-	tr = translate( mat4(1.0), vec3(0, -275, 0) );	
+	tr = translate( mat4(1.0), vec3(0, -275, 0) );
 	pTerrain->GetNodeData().W()	*= tr;	
-
-	// Globe (globe is centered on the origin)
+	
+	
+	// Globe
 	Globe* pGlobe = new (std::nothrow) Globe(  
 		this, 
-		pTerrain, 
+		&m_RootNode, 
 		std::string("globe"), 
 		350.0f, 30, 30, 
 		string(""), 
-		glm::vec4(1.0, 1.0, 1.0, 0.8) 
+		glm::vec4(1.0, 1.0, 1.0, 1.0) 
 	);
-	
+
+	// position the globe
 	if( ! pGlobe || ! pGlobe->Initialized() )
 	{
 		AppLog::Ref().LogMsg("SceneGraph failed to intialize the Globe");
 		return false;
 	}
 		
-	tr = translate( glm::mat4(1.0), vec3(0, 550, 0) );
+	tr = translate( glm::mat4(1.0), vec3(0, 0, 0) );
 	pGlobe->GetNodeData().W() *= tr;
 	m_map.insert( ActorIdPair( pGlobe->Id(), pGlobe) );
-	
-	
+
+
+
 	// snow
 	Snow* pSnow = new (std::nothrow) Snow(
 		this,
@@ -146,7 +149,7 @@ bool SceneGraph::InitializeGraph()
 		return false;
 	}
 		
-	tr = translate( mat4(1.0), vec3(0, 350, 0) );
+	tr = translate( mat4(1.0), vec3(0, 380, 0) );
 	pSnow->GetNodeData().W() *= tr;	
 	m_map.insert( ActorIdPair( pSnow->Id(), pSnow) );
 		
@@ -212,7 +215,6 @@ bool SceneGraph::InitializeGraph()
 	pHouse->GetNodeData().W() *= tr;
 	m_map.insert( ActorIdPair( pHouse->Id(), pHouse) );
 
-
 	// Tree
 	Tree* pTree = new (std::nothrow) Tree(
 		this,
@@ -228,10 +230,11 @@ bool SceneGraph::InitializeGraph()
 		return false;
 	}		
 	
-	tr = translate( mat4(1.0), vec3(0, 352, 70) );
+	tr = translate( mat4(1.0), vec3(0, 352, 70) );		
 	pTree->GetNodeData().W() *= tr;
+
 	m_map.insert( ActorIdPair( pTree->Id(), pTree) );
-	
+			
 
 	return true;
 }

@@ -89,8 +89,6 @@ void TreeShaderz::Uninitialize()
 			m_Shaders[n].ShaderProg(NULL);
 		}
 	}
-
-
 }
 
 std::ostream & operator << ( std::ostream & out, const TreeShaderz & r )

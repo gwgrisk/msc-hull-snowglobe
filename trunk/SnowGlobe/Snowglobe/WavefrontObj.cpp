@@ -7,7 +7,9 @@
 #include <glm\glm.hpp>
 
 #include <AntiMatter\AppLog.h>
+#include <AntiMatter\Exceptions.h>
 #include <AntiMatter\ShellUtils.h>
+#include <AntiMatter\AlgorithmTimer.h>
 
 #include <string>
 #include <vector>
@@ -19,8 +21,13 @@
 #include <fstream>
 #include <sstream>
 
-
+WavefrontObj::WavefrontObj() :
+		m_bInitialized			( false ),
+		m_nCurrentGroupIndex	( 0 )
+{
+}
 WavefrontObj::WavefrontObj( const std::string & sFile ) : 
+	m_bInitialized			( false ),
 	m_nCurrentGroupIndex	( 0 )
 {
 	// ensure file exists / has correct extension
@@ -30,7 +37,7 @@ WavefrontObj::WavefrontObj( const std::string & sFile ) :
 	m_sFilename = sFile;
 
 	// parse the file
-	ParseFile();
+	m_bInitialized = ParseFile();
 }
 WavefrontObj::~WavefrontObj()
 {
@@ -39,155 +46,159 @@ WavefrontObj::~WavefrontObj()
 
 bool WavefrontObj::ValidateFile( const std::string & sFile )
 {
+	using AntiMatter::Shell::FileExists;
+	using AntiMatter::Shell::FileHasExtension;
+	using std::string;
+
 	if ( ! FileExists(sFile) )
 		return false;
 
-	if( ! FileHasObjExtension(sFile) )
-		return false;	
+	bool bExtension = FileHasExtension( sFile, string("obj") );
+
+	if( ! bExtension )
+		return false;
 
 	return true;
 }
-bool WavefrontObj::FileExists( const std::string & sFile )
-{
-	// convert the filename to wchar_t format for use in win32 call
-	// check for file existance
-	using namespace std;
-
-	bool bExists = false;
-	wstring wsFile;
-
-	wsFile.resize( sFile.length() + 1 );
-	std::copy( sFile.begin(), sFile.end(), wsFile.begin() );
-
-	bExists = ( GetFileAttributes( wsFile.c_str() ) == INVALID_FILE_ATTRIBUTES ? false : true );
-	
-	return bExists;
-}
-bool WavefrontObj::FileHasObjExtension( const std::string & sFile )
-{
-	using namespace std;
-
-	string sExn;
-	bool bExists = false;
-
-	sExn.resize(4);
-	std::copy( sFile.end()-4, sFile.end(), sExn.begin() );
-
-	if( sExn.compare(".obj") == 0 )
-		bExists = true;
-
-	return bExists;
-}
-	
-void WavefrontObj::ParseFile()
+bool WavefrontObj::ParseFile()
 {
 	using namespace std;
 	using AntiMatter::AppLog;
+	using AntiMatter::Algorithm::AlgorithmTimer;
 
-	ifstream	stream;
-	string		sToken;	
+	bool			bSuccess = true;
+	ifstream		stream;
+	stringstream	sstream;
+	string			sToken;
+	string			sLineBuffer;
+	AlgorithmTimer	timer;
+
+	glm::vec2		v2;
+	glm::vec3		v3;
+
+	unsigned int	nFaces		= 0;
+	unsigned int	nVertices	= 0;
+	unsigned int	nTextures	= 0;
+	unsigned int	nNormals	= 0;
+	unsigned int	nGroups		= 0;
 
 	try
 	{
+		// Read entire file from disk into memory
 		stream.open( m_sFilename.c_str(), std::ios::in );
 
-		if( stream.is_open() )
+		Enforce<AppException>(  stream.is_open() && stream.good(), 
+								string("failed to open file") );
+
+		sstream << stream.rdbuf();
+		stream.close();
+		
+		// first pass through stringstream - count faces, verts, textures, normals,
+		// then reserve memory for their various groups
+		timer.Start();
+			
+		sLineBuffer.reserve( 100 );
+		sToken.reserve(10);
+
+		while( sstream.good() )
 		{
-			while( stream.good() )
-			{
-				stream >> sToken;
-				transform( sToken.begin(), sToken.end(), sToken.begin(), tolower );
+			sstream >> sToken;
+			getline( sstream, sLineBuffer );
 
-				if( sToken.compare("f") == 0 )				// face
-					ParseFace(stream);
+			if( sToken.compare("f") == 0 )
+				nFaces ++;
 
-				else if( sToken.compare("v") == 0 )			// vertex				
-					ParseVertex(stream);
+			else if( sToken.compare("v") == 0 )
+				nVertices ++;
 
-				else if( sToken.compare("vn") == 0 )		// normal				
-					ParseNormal(stream);
-				
-				else if( sToken.compare("vt") == 0 )		// texture 				
-					ParseTexCoord(stream);
+			else if( sToken.compare("vn") == 0 )
+				nNormals ++;
 
-				else if( sToken.compare("g") == 0 )			// new object sub-group
-					NewSubGroup( stream );
-				
-				else if( sToken.compare("s") == 0 )			// shading instuction				
-					ParseComment(stream);					// ignore for now
-
-				else if ( sToken.compare("usemtl") == 0 )	// material instruction									
-					ParseUsemtl(stream);
-				
-				else if ( sToken.compare("mtllib") == 0 )	// parse mtl file, add material to the m_materials vector				
-					ParseMtllib( stream );								
-
-				else										// comment, junk input or empty line				
-					ParseComment(stream);
-			}
+			else if( sToken.compare("vt") == 0 )
+				nTextures ++;
+					
+			else if( sToken.compare("g") == 0 )
+				nGroups ++;
 		}
+
+		m_Vertices.reserve( nVertices );
+		m_Normals.reserve( nNormals );
+		m_TexCoords.reserve( nTextures );
+		m_Faces.reserve( nFaces );
+		m_Groups.reserve( nGroups );
+
+		timer.Stop();
+		ATLTRACE(_T("time for pass one: %5.2f seconds\r\n"), timer.DurationSecs() );
+		timer.Reset();
+			
+			
+		// second pass through stringstream - parse verts, textures, normals
+		timer.Start();
+		sstream.clear();
+		sstream.seekg(0, ios_base::beg);
+
+		while( sstream.good() )
+		{
+			sstream >> sToken;
+			transform( sToken.begin(), sToken.end(), sToken.begin(), tolower );
+
+			if( sToken.compare("f") == 0 )				// face
+				ParseFace(sstream);
+
+			else if( sToken.compare("v") == 0 )			// vertex
+			{
+				sstream >> v3.x >> v3.y >> v3.z;
+				m_Vertices.push_back(v3);
+			}
+
+			else if( sToken.compare("vn") == 0 )		// normal
+			{
+				sstream >> v3.x >> v3.y >> v3.z;
+				m_Normals.push_back( v3 );
+			}
+				
+			else if( sToken.compare("vt") == 0 )		// texture 
+			{
+				sstream >> v2.x >> v2.y;
+				m_TexCoords.push_back( v2 );	
+			}
+
+			else if( sToken.compare("g") == 0 )			// new object sub-group
+				NewSubGroup( sstream );
+				
+			else if( sToken.compare("s") == 0 )			// shading instuction				
+				getline( sstream, sLineBuffer );		// ignore for now
+
+			else if ( sToken.compare("usemtl") == 0 )	// material instruction									
+				ParseUsemtl( sstream );
+				
+			else if ( sToken.compare("mtllib") == 0 )	// parse mtl file, add material to the m_materials vector				
+				ParseMtllib( sstream );								
+
+			else										// parse comment, junk input or empty line
+				getline( sstream, sLineBuffer );
+		}
+
+		timer.Stop();
+		ATLTRACE(_T("time for pass two: %5.2f seconds\r\n"), timer.DurationSecs() );
+		timer.Reset();
+		
+	}
+	catch( AppException & e )
+	{
+		AppLog::Ref().LogMsg("%s: %s", __FUNCTION__, e.what() );
+		bSuccess = false;
 	}
 	catch(...)
 	{
 		AppLog::Ref().LogMsg("%s exception encountered while parsing obj file %s", __FUNCTION__, m_sFilename );
+		bSuccess = false;
 	}
 
-	if( stream.is_open() )
-		stream.close();
+	return bSuccess;
 }
-void WavefrontObj::ParseVertex( std::ifstream & stream )
-{
-	// can't simply read this vertex into a vector object
-	// it may optionally have four components instead of three
 	
-	// read line
-	// perform split operation
-	// populate v based on the number of values returned
-
-	using namespace std;
-
-	glm::vec3		v;
-	istringstream	sstream;
-	string			sLine;	
-
-	getline( stream, sLine );
-
-	sstream = istringstream(sLine);
-
-	sstream >> v.x >> v.y >> v.z;
-		
-	m_Vertices.push_back(v);		
-}
-void WavefrontObj::ParseTexCoord( std::ifstream & stream )
-{
-	// can't simply read this vertex into a vector object
-	// it may optionally have three components instead of two
-	
-	// read line
-	// perform split operation
-	// populate v based on the number of values returned
-
-	using namespace std;
-
-	glm::vec2		v;
-	istringstream	sstream;
-	string			sLine;	
-
-	getline( stream, sLine );
-
-	sstream = istringstream(sLine);
-
-	sstream >> v.x >> v.y;
-
-	m_TexCoords.push_back( v );	
-}
-void WavefrontObj::ParseNormal( std::ifstream & stream )
-{	
-	glm::vec3 v;
-	stream >> v.x >> v.y >> v.z;
-	m_Normals.push_back( v );
-}	
-void WavefrontObj::ParseFace( std::ifstream & stream )
+void WavefrontObj::ParseFace( std::stringstream & stream )
 {
 	// valid face lines include:
 	// f v1..v3
@@ -208,9 +219,9 @@ void WavefrontObj::ParseFace( std::ifstream & stream )
 
 	// split the string by spaces, store in a vector of string
 	copy(
-		istream_iterator <string> (sls), 
-		istream_iterator <string> (),
-		back_inserter <vector<string>>	(sVertexTokens)
+		istream_iterator <string>			(sls),
+		istream_iterator <string>			(),
+		back_inserter < vector<string> >	(sVertexTokens)
 	);
 
 	// determine if we've got a complex face that needs to be sub-divided into triangles
@@ -266,13 +277,7 @@ void WavefrontObj::ParseFace( std::ifstream & stream )
 		ATLASSERT(0);
 	}	
 }
-void WavefrontObj::ParseComment( std::ifstream & stream )
-{
-	// just read to the end of line (e.g. ignore comment)
-	std::string sLine;
-	getline( stream, sLine );
-}
-void WavefrontObj::ParseMtllib( std::ifstream & stream )
+void WavefrontObj::ParseMtllib( std::stringstream & stream )
 {
 	using std::string;
 
@@ -287,10 +292,16 @@ void WavefrontObj::ParseMtllib( std::ifstream & stream )
 	
 	sCompleteMtlFilePath = sFilePath + sMtlFilename;
 
-	WavefrontMtl::ParseFile( sCompleteMtlFilePath, m_materials );	
+	WavefrontMtl::ParseFile( sCompleteMtlFilePath, m_materials );
 }
+void WavefrontObj::ParseUsemtl( std::stringstream & stream )
+{			
+	std::string	sMtlName;
 
-void WavefrontObj::NewSubGroup( std::ifstream & stream )
+	stream >> sMtlName;
+	m_Groups[m_nCurrentGroupIndex].SetMaterial( sMtlName );
+}
+void WavefrontObj::NewSubGroup( std::stringstream & stream )
 {
 	using std::string;
 	using std::istringstream;
@@ -312,14 +323,6 @@ void WavefrontObj::NewSubGroup( std::ifstream & stream )
 	}
 }
 
-void WavefrontObj::ParseUsemtl( std::ifstream & stream )
-{			
-	std::string	sMtlName;
-
-	stream >> sMtlName;
-	m_Groups[m_nCurrentGroupIndex].SetMaterial( sMtlName );
-}
-
 void WavefrontObj::SplitToVertTexNormal( const std::string & sData, const char cSplitBy, 
 										int & nVertIndex, int & nTexIndex, int & nNormIndex  )
 {
@@ -327,6 +330,8 @@ void WavefrontObj::SplitToVertTexNormal( const std::string & sData, const char c
 	vector<string>	sElements;
 
 	nVertIndex = nTexIndex = nNormIndex = -1;
+
+	sElements.reserve(3);
 
 	SplitString( sData, cSplitBy, sElements );	
 
@@ -354,8 +359,6 @@ void WavefrontObj::SplitString( const std::string & sInput, const char cDelimite
 	stringstream ss(sInput);
 	string sNext;
 
-	while( getline( ss, sNext, cDelimiter ) )	
+	while( getline( ss, sNext, cDelimiter ) )
 		vElements.push_back(sNext);
 }
-
-

@@ -41,5 +41,5 @@ public:
 	void Camera::SetPos( const glm::vec3 & r );
 	void Update( const float & rSecsDelta );
 	void SetScreenSize( const int & x, const int & y ); 
-	void SetFOV( const REAL & r );
+	void SetFOV( const real & r );
 };

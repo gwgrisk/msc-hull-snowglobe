@@ -84,7 +84,9 @@ void EffectMgr::Uninitialize()
 	for( x = m_map.begin(); x != m_map.end(); x ++ )
 	{
 		Effect* pNext = &(x->second);
-		delete pNext;		
+
+		if( pNext )
+			delete pNext;
 	}
 
 	m_map.clear();
@@ -222,11 +224,14 @@ std::istream & operator >> ( std::istream & in, EffectMgr & r )
 			}
 		}
 
-		Effect* pE	= new Effect( Descs, Attrs, sEffectName );
-		bool bAdded = r.Add( sEffectName, pE );
+		Effect* pE	= new (std::nothrow) Effect( Descs, Attrs, sEffectName );
+		if( pE )
+		{
+			bool bAdded = r.Add( sEffectName, pE );
 
-		if( ! bAdded )
-			delete pE;
+			if( ! bAdded )
+				delete pE;
+		}
 	}
 	
 	return in;

@@ -3,6 +3,9 @@
 #include "IGraphNode.h"
 #include <AntiMatter\AppLog.h>
 
+#include <vector>
+#include <string>
+#include <algorithm>
 #include <glm\glm.hpp>
 
 IGraphNode::IGraphNode( SceneGraph* pGraph, IGraphNode* pParent, const std::string & id ) :
@@ -52,14 +55,36 @@ HRESULT IGraphNode::UpdateChildren( const float & rSecsDelta )
 
 HRESULT IGraphNode::DrawItem()
 {
+	// Added code to draw the globe as the first item
+	// Could add work to IGraphNode to say whether a node is 
+	// transparent or not
+	// e.g. this could totally do with restructuring to make it
+	// more efficient.
 	using namespace std;
+
+	IGraphNode* pGlobe = NULL;
+
+	std::for_each( 
+		m_ChildNodes.begin(), m_ChildNodes.end(),
+		[&](IGraphNode* pNode)
+		{
+			if( pNode->Id().compare("globe") == 0 )
+			{
+				pGlobe = pNode;
+				pNode->DrawItem();
+			}							
+		}
+	);
 	
-	// iterate child nodes and call Update on each
-	for( NItr n = m_ChildNodes.begin(); n != m_ChildNodes.end(); n ++ )
-	{
-		IGraphNode* pNext = (*n);
-		pNext->DrawItem();
-	}
+	// iterate nodes and draw non-transparent nodes
+	std::for_each( 
+		m_ChildNodes.begin(), m_ChildNodes.end(),
+		[&](IGraphNode* pNode)
+		{
+			if( pNode != pGlobe )
+				pNode->DrawItem();
+		}
+	);	
 
 	// rendering this node is deliberately ommitted, so the user can override, 
 	// call this function, then implement their own DrawItem() on a per object 

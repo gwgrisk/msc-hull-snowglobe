@@ -12,22 +12,23 @@
 class Tri : public IGeometry
 {
 private:
-	bool			m_bInitialized;
-	CustomVertex *	m_pVertices;
-	DWORD *			m_pdwIndices;
+	bool				m_bInitialized;
+	CustomVertex *		m_pVertices;
+	unsigned short *	m_pdwIndices;
 
-	float			m_rBaseLength;
-	float			m_rHeight;
+	float				m_rBaseLength;
+	float				m_rHeight;
 
-	int				m_nVertCount;
-	int				m_nIndexCount;
+	int					m_nVertCount;
+	int					m_nIndexCount;
 
 private:
 	bool Initialize();
 	
 	// IGeometry
+	bool GenerateData(){ return true; }
 	HRESULT GenerateVertices( CustomVertex** ppVertices );
-	HRESULT GenerateIndices( DWORD** ppIndices );
+	HRESULT GenerateIndices( unsigned short** ppIndices );
 
 public:
 	Tri();
@@ -45,5 +46,5 @@ public:
 	const int TriCount() const		{ return m_nIndexCount / 3; }
 
 	CustomVertex** Vertices()		{ return &m_pVertices; }
-	DWORD* Indices()				{ return m_pdwIndices; }
+	unsigned short* Indices()		{ return m_pdwIndices; }
 };

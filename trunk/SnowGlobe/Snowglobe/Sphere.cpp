@@ -189,7 +189,7 @@ HRESULT Sphere::GenerateVertices( CustomVertex** ppVertices )
 
 	float rStackStep = 1.0f / (float)m_nStacks;
 	float rSliceStep = 2.0f * g_Pi / (float)m_nSlices;
-
+	
 	float	x, y, z;
 	float	rad;
 	int		nTmp;
@@ -238,7 +238,7 @@ HRESULT Sphere::GenerateVertices( CustomVertex** ppVertices )
 
 	return S_OK;
 }
-HRESULT Sphere::GenerateIndices( DWORD ** ppdwIndices )
+HRESULT Sphere::GenerateIndices( unsigned short ** ppdwIndices )
 {
 	if( m_bInitialized )
 		return E_UNEXPECTED;
@@ -246,7 +246,7 @@ HRESULT Sphere::GenerateIndices( DWORD ** ppdwIndices )
 	if( ! ppdwIndices )
 		return E_INVALIDARG;
 
-	*ppdwIndices = new (std::nothrow) DWORD[m_nIndexCount];
+	*ppdwIndices = new (std::nothrow) unsigned short[m_nIndexCount];
 	if( ! *ppdwIndices )
 		return E_OUTOFMEMORY;
 
@@ -258,18 +258,18 @@ HRESULT Sphere::GenerateIndices( DWORD ** ppdwIndices )
 
 	for( int j = 0; j <= m_nSlices; j ++ )
 	{
-		(*ppdwIndices)[n++] = v ++;
+		(*ppdwIndices)[n++] = (unsigned short)v ++;
 	}
 	
-	v -= (m_nSlices+1);
+	v -= (unsigned short)(m_nSlices+1);
 
 	// strips
 	for( int i = 0; i < (m_nStacks-2); i ++ )
 	{
 		for( int j  = 0; j <= m_nSlices; j ++ )
 		{ 
-			(*ppdwIndices)[n++] = v ++;
-			(*ppdwIndices)[n++] = m_nSlices + v;
+			(*ppdwIndices)[n++] = (unsigned short)v ++;
+			(*ppdwIndices)[n++] =  (unsigned short)(m_nSlices + v);
 		}
 	}
 
@@ -278,7 +278,7 @@ HRESULT Sphere::GenerateIndices( DWORD ** ppdwIndices )
 
 	for( int j = 0; j <= m_nSlices; j ++ )
 	{
-		(*ppdwIndices)[n++] = v + m_nSlices - j;
+		(*ppdwIndices)[n++] =  (unsigned short)(v + m_nSlices - j);
 	}
 
 	ATLASSERT( n <= m_nIndexCount );

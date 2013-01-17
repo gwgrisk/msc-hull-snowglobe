@@ -9,6 +9,9 @@
 #include <fstream>
 #include <sstream>
 
+#include <map>
+#include <utility>
+
 
 bool WavefrontMtl::ValidateFile( const std::string & sFile )
 {
@@ -19,21 +22,14 @@ bool WavefrontMtl::ValidateFile( const std::string & sFile )
 	if( ! FileExists( sFile ) )
 		return false;
 
-	HRESULT hr				= S_OK;
-	bool	bHasExtension	= false;
-
-	hr = FileHasExtension( bHasExtension, sFile, string("mtl"));
-	
-	if( FAILED(hr) || ! bHasExtension )
-		return false;
-
-	return true;
+	return FileHasExtension( sFile, string("mtl"));
 }
-bool WavefrontMtl::ParseFile( const std::string & sFile, std::vector<Material> & materials )
+bool WavefrontMtl::ParseFile( const std::string & sFile, std::map<std::string, Material> & materials )
 {
 	using std::ifstream;
 	using std::istringstream;
 	using std::string;
+	using std::pair;
 	using AntiMatter::AppLog;
 
 	bool			bSuccess = false;
@@ -44,7 +40,7 @@ bool WavefrontMtl::ParseFile( const std::string & sFile, std::vector<Material> &
 	glm::vec3		Kd			= glm::vec3(0.0);
 	glm::vec3		Ks			= glm::vec3(0.0);
 	float			rShininess	= 0.0f;
-	std::string		sName;
+	string			sName;
 	unsigned int	Ns			= 0;
 	unsigned int	d			= 0;
 	unsigned int	Tr			= 0;
@@ -102,7 +98,9 @@ bool WavefrontMtl::ParseFile( const std::string & sFile, std::vector<Material> &
 			{
 				bSuccess = true;
 
-				materials.push_back( Material (sName, Ka, Kd, Ks, rShininess, Ns, d, Tr, Tf, Illum) );
+				materials.insert( 
+					pair <string, Material> ( sName, Material(sName, Ka, Kd, Ks, rShininess, Ns, d, Tr, Tf, Illum) )
+				);
 
 				sName		= "";
 				Ka			= glm::vec3(0.0f);
@@ -124,7 +122,7 @@ bool WavefrontMtl::ParseFile( const std::string & sFile, std::vector<Material> &
 	}
 
 	if( bSuccess )	
-		AppLog::Ref().LogMsg("%s succeeded parsing mtl file %s", __FUNCTION__, sFile );
+		AppLog::Ref().LogMsg("%s succeeded parsing mtl file %s", __FUNCTION__, sFile.c_str() );
 
 	if( stream.is_open() )
 		stream.close();

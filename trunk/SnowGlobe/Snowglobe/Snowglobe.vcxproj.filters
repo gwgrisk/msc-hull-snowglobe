@@ -40,9 +40,6 @@
     <ClCompile Include="Light.cpp">
       <Filter>Source Files\Scene\Lights</Filter>
     </ClCompile>
-    <ClCompile Include="LSystem.cpp">
-      <Filter>Source Files\Data</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files\Main</Filter>
     </ClCompile>
@@ -61,16 +58,10 @@
     <ClCompile Include="Terrain.cpp">
       <Filter>Source Files\Scene\Actors</Filter>
     </ClCompile>
-    <ClCompile Include="Tree.cpp">
-      <Filter>Source Files\Scene\Actors</Filter>
-    </ClCompile>
     <ClCompile Include="Projection.cpp">
       <Filter>Source Files\Scene\Projection</Filter>
     </ClCompile>
     <ClCompile Include="Quad.cpp">
-      <Filter>Source Files\Geometry</Filter>
-    </ClCompile>
-    <ClCompile Include="Segment.cpp">
       <Filter>Source Files\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Sphere.cpp">
@@ -94,9 +85,6 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Source Files\Gfx\Shader</Filter>
     </ClCompile>
-    <ClCompile Include="TreeShaderz.cpp">
-      <Filter>Source Files\Gfx\Shader</Filter>
-    </ClCompile>
     <ClCompile Include="VertexBufferObject.cpp">
       <Filter>Source Files\Gfx</Filter>
     </ClCompile>
@@ -114,6 +102,21 @@
     </ClCompile>
     <ClCompile Include="WavefrontMtl.cpp">
       <Filter>Source Files\Data\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Actor.cpp">
+      <Filter>Source Files\Scene\Actors</Filter>
+    </ClCompile>
+    <ClCompile Include="Segment.cpp">
+      <Filter>Source Files\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="LSystem.cpp">
+      <Filter>Source Files\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Tree.cpp">
+      <Filter>Source Files\Scene\Actors</Filter>
+    </ClCompile>
+    <ClCompile Include="TreeShaderz.cpp">
+      <Filter>Source Files\Scene\Actors</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -165,9 +168,6 @@
     <ClInclude Include="Lightning.h">
       <Filter>Header Files\Scene\Actors</Filter>
     </ClInclude>
-    <ClInclude Include="LSystem.h">
-      <Filter>Header Files\Data</Filter>
-    </ClInclude>
     <ClInclude Include="Material.h">
       <Filter>Header Files\Gfx\Textures</Filter>
     </ClInclude>
@@ -185,9 +185,6 @@
     </ClInclude>
     <ClInclude Include="SceneLights.h">
       <Filter>Header Files\Scene\Lights</Filter>
-    </ClInclude>
-    <ClInclude Include="Segment.h">
-      <Filter>Header Files\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>Header Files\Gfx\Shader</Filter>
@@ -231,14 +228,8 @@
     <ClInclude Include="Texture.h">
       <Filter>Header Files\Gfx\Textures</Filter>
     </ClInclude>
-    <ClInclude Include="Tree.h">
-      <Filter>Header Files\Scene\Actors</Filter>
-    </ClInclude>
     <ClInclude Include="Tri.h">
       <Filter>Header Files\Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="TreeShaderz.h">
-      <Filter>Header Files\Data</Filter>
     </ClInclude>
     <ClInclude Include="FrameBufferObject.h">
       <Filter>Header Files\Gfx</Filter>
@@ -260,6 +251,27 @@
     </ClInclude>
     <ClInclude Include="WavefrontMtl.h">
       <Filter>Header Files\Data\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Actor.h">
+      <Filter>Header Files\Scene\Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="Segment.h">
+      <Filter>Header Files\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="LSystem.h">
+      <Filter>Header Files\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Tree.h">
+      <Filter>Header Files\Scene\Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="TreeShaderz.h">
+      <Filter>Header Files\Scene\Actors</Filter>
+    </ClInclude>
+    <ClInclude Include="Colours.h">
+      <Filter>Header Files\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="HashedString.h">
+      <Filter>Source Files\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -348,12 +360,6 @@
     <None Include="..\Shaders\tree-wireframe.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="..\Shaders\x-ray.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\x-ray.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\Shaders\Snow.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
@@ -368,6 +374,18 @@
     </None>
     <None Include="SnowGlobe.ico">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\Shaders\flat.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\flat.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\globe.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\globe.frag">
+      <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

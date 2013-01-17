@@ -11,7 +11,7 @@ class Plane : public IGeometry
 {
 private:
 	CustomVertex *					m_pVertices;
-	DWORD *							m_pdwIndices;
+	unsigned short *				m_pdwIndices;
 	std::vector<glm::vec3>			m_FaceNormals;
 
 	int								m_nVertCols;
@@ -42,11 +42,12 @@ private:
 		const float			rCellWidth, 
 		const float			rCellHeight, 
 		CustomVertex**		ppVertices,
-		DWORD**				ppdwIndices
+		unsigned short**	ppdwIndices
 	);
 
+	bool GenerateData(){ return true; }
 	HRESULT GenerateVertices( CustomVertex** ppVertices );
-	HRESULT GenerateIndices( DWORD** ppdwIndices );
+	HRESULT GenerateIndices( unsigned short** ppdwIndices );
 	HRESULT GenerateNormals( CustomVertex** ppVertices );
 	
 	void ComputeFaceNormals();
@@ -70,7 +71,7 @@ public:
 	const int TriCount() const		{ return m_nCellCount * 2; }
 
 	CustomVertex** Vertices()		{ return &m_pVertices; }
-	DWORD* Indices()				{ return m_pdwIndices; }
+	unsigned short* Indices()		{ return m_pdwIndices; }
 		
 	void RecalcNormalMap();
 };

@@ -8,15 +8,20 @@
 #include <AntiMatter\AppLog.h>
 #include <AntiMatter\ShellUtils.h>
 #include <comdef.h>
-#include <vector>
-#include <iostream>
+
 #include <string>
+#include <vector>
+
+#include <iostream>
+#include <fstream>
+
 #include <glm\glm.hpp>
 #include <glm\gtx\rotate_vector.hpp>
 
-
 using std::string;
 using std::vector;
+using glm::vec3;
+
 
 LSystem::LSystem() :
 	m_bInitialized		( false ),
@@ -24,7 +29,8 @@ LSystem::LSystem() :
 	m_pRootNode			( NULL ),
 	m_rAngle			( 0.0f ),
 	m_rInitialSegLength	( 0.0f ),
-	m_vInitialPosition	( glm::vec3(0.0, 0.0, 0.0) )
+	m_vInitialPosition	( glm::vec3(0.0f) ),
+	m_vNextDirection	( glm::vec3(0.0f) )
 {
 }
 LSystem::LSystem( const std::string & sCfgFile ) :
@@ -33,7 +39,8 @@ LSystem::LSystem( const std::string & sCfgFile ) :
 	m_pRootNode			( NULL ),
 	m_rAngle			( 0.0f ),
 	m_rInitialSegLength	( 0.0f ),
-	m_vInitialPosition	( glm::vec3(0.0, 0.0, 0.0) )
+	m_vInitialPosition	( glm::vec3(0.0f) ),
+	m_vNextDirection	( glm::vec3(0.0f) )
 {
 	// read in ruleset from disk, then Initialize
 	using AntiMatter::Shell::FileExists;
@@ -60,7 +67,8 @@ LSystem::LSystem( const int & nMaxGenerations, const float rAngle, const float r
 	m_pRootNode			( NULL ),
 	m_rAngle			( rAngle ),
 	m_rInitialSegLength	( rInitSegLen ),
-	m_vInitialPosition	( vInitialPos )
+	m_vInitialPosition	( vInitialPos ),
+	m_vNextDirection	( glm::vec3(0.0f) )
 {		
 	this->Rules( sRuleset );
 
@@ -78,11 +86,11 @@ LSystem::LSystem( const LSystem & r )  :
 	m_pRootNode			( NULL ),
 	m_rAngle			( r.m_rAngle ),
 	m_rInitialSegLength	( r.m_rInitialSegLength ),
-	m_vInitialPosition	( r.m_vInitialPosition )
+	m_vInitialPosition	( r.m_vInitialPosition ),
+	m_vNextDirection	( r.m_vNextDirection )
 {	
-	this->Rules( r.m_Rules );
-
-	this->m_bInitialized = Initialize();
+	Rules( r.m_Rules );
+	m_bInitialized = Initialize();
 }
 LSystem & LSystem::operator=( const LSystem & r )
 {
@@ -94,6 +102,7 @@ LSystem & LSystem::operator=( const LSystem & r )
 		this->m_rAngle				= r.m_rAngle;
 		this->m_rInitialSegLength	= r.m_rInitialSegLength;	
 		this->m_vInitialPosition	= r.m_vInitialPosition;
+		this->m_vNextDirection		= r.m_vNextDirection;
 	
 		this->Rules( r.m_Rules );
 
@@ -116,8 +125,8 @@ bool LSystem::Initialize()
 	{
 		AppLog::Ref().LogMsg("LSystem has no ruleset specified, using hard coded initial conditions and creating config file");	
 
-		m_Rules.push_back("FF+F+[2]-F");
-		m_Rules.push_back("F-F--F+F-F");
+		m_Rules.push_back("F+F+[2]");
+		m_Rules.push_back("F-");
 
 		m_nMaxGenerations	= 14;
 		m_rAngle			= 25.0f;
@@ -134,20 +143,18 @@ bool LSystem::Initialize()
 		return false;
 	}
 
-	HRESULT hr;
-
-	hr = GenerateLSystem();
-	if( ! SUCCEEDED(hr) )
+	bool bSuccess = GenerateLSystem();
+	
+	if( ! bSuccess )
 	{
-		AppLog::Ref().LogMsg( "%s failed to Initialize. GenerateLSystem reports %s", 
-			__FUNCTION__,
-			_com_error(hr).ErrorMessage()
+		AppLog::Ref().LogMsg( "%s failed to Initialize.", 
+			__FUNCTION__
+			/*_com_error(hr).ErrorMessage()*/
 		);
 		Uninitialize();
-		return false;
 	}
 
-	return true;
+	return bSuccess;
 }
 void LSystem::Uninitialize()
 {
@@ -157,7 +164,7 @@ void LSystem::Uninitialize()
 
 	if( m_pRootNode )
 	{
-		m_pRootNode->DeleteChildSegs();
+		m_pRootNode->DeleteChildren();
 		delete m_pRootNode;
 
 		m_pRootNode	= NULL;
@@ -201,69 +208,72 @@ bool LSystem::ValidateRulesets()
 
 	return true;
 }
-HRESULT LSystem::GenerateLSystem()
+bool LSystem::GenerateLSystem()
 {
 	// generate LSystem dataset, up to and including max generations
-	using std::string;
-	using glm::vec4;
-	using glm::mat4;
-	using AntiMatter::AppLog;
+	InterpretRule( NULL, m_Rules[0] );
 
-	string	sInstruction;
-	string	sRule;
-	mat4	mOrientation = glm::mat4(1.0f);
-
-	m_pRootNode = new (std::nothrow) Segment( NULL, mOrientation, m_rInitialSegLength, m_nMaxGenerations );
-	if ( ! m_pRootNode )
-		return E_OUTOFMEMORY;
-
-	InterpretRule( m_pRootNode, m_Rules[0] );
-
-	return S_OK;
+	return true;
 }
 
 void LSystem::InterpretRule( Segment* pCurrent, const std::string & sRule )
 {
-	if( ! pCurrent )
-		return;		
+	// recursive function that generates LSystem tree segments
 
-	using std::string;
-	using glm::vec4;
-	using glm::mat4;
+	using std::string;	
+	using glm::vec3;
 	using glm::normalize;
-	using glm::rotate;
+	using glm::rotate;	
+	using glm::rotateX;
+	using glm::rotateZ;
 
 	Segment *	pSeg			= pCurrent;
-	mat4		mOrientation	= pSeg->W();
+	vec3		vOrientation	= pSeg ? pSeg->Orientation() : glm::vec3(0,1,0);
+	
 
 	for( unsigned int n = 0; n < sRule.length(); n ++ )
 	{
-		if( pSeg->Generation() >= m_nMaxGenerations )
-			break;
+		if( pSeg )
+			if( pSeg->Generation() >= m_nMaxGenerations )
+				break;
 
 		char cNextChar = sRule[n];
 		switch( cNextChar )
 		{
-		case 'F':
-			pSeg = AddSegment( pSeg, mOrientation );
+		case 'F':	// generate a new segment
+			{
+				if( m_pRootNode )
+				{
+					pSeg = AddSegment( pSeg );					
+				}
+				else
+				{
+					m_pRootNode = AddSegment( nullptr );
+					pSeg		= m_pRootNode;
+				}
+
+				if( ! pSeg )
+					return;
+			}
 			break;
 
-		case '+':
-				// rotate anti-clockwise by fixed angle
-				mOrientation *= rotate( m_rAngle, 0.0f, 0.0f, 1.0f );
-				mOrientation *= rotate( m_rAngle, 0.0f, 1.0f, 0.0f );
-				mOrientation *= rotate( m_rAngle, 1.0f, 0.0f, 0.0f );							
+		case '+':	// rotate anti-clockwise by fixed angle
+			{
+				vec3 vDelta			= pSeg ? pSeg->Orientation() : vec3(0, 1, 0);
+				vDelta				= rotateX<real>( vDelta, 10.0f );
+				m_vNextDirection	= normalize(m_vNextDirection + vDelta);				// m_vNextDirection used in AddSegment()
+			}
 			break;
 
-		case '-':
-				// rotate clockwise by fixed angle				
-				mOrientation *= rotate( -m_rAngle, 0.0f, 0.0f, 1.0f );
-				mOrientation *= rotate( -m_rAngle, 0.0f, 1.0f, 0.0f );
-				mOrientation *= rotate( -m_rAngle, 1.0f, 0.0f, 0.0f );
-			
+		case '-':	// rotate clockwise by fixed angle
+			{				
+				vec3 vDelta			= pSeg ? pSeg->Orientation() : vec3(0, 1, 0);
+				vDelta				= rotateX( vDelta, -10.0f );
+				m_vNextDirection	= normalize(m_vNextDirection + vDelta);				// m_vNextDirection used in AddSegment()
+			}
 			break;
 
-		case '[':
+		case '[':	// sub branch rule
 			{
 				string sSubRule;
 				unsigned int nClosePos = 0;
@@ -274,7 +284,6 @@ void LSystem::InterpretRule( Segment* pCurrent, const std::string & sRule )
 					if( nClosePos > n )
 						n = nClosePos;
 
-					pSeg->W( mOrientation );
 					InterpretRule( pSeg, sSubRule );
 				}				
 			}
@@ -292,11 +301,8 @@ void LSystem::InterpretRule( Segment* pCurrent, const std::string & sRule )
 			int		nRuleIndex	= atoi(&cNextChar) - 1;
 			string	sSubRuleset	= m_Rules[nRuleIndex];
 
-			if( sSubRuleset.length() > 0 )
-			{
-				pSeg->W( mOrientation );
-				InterpretRule(pSeg, sSubRuleset);
-			}
+			if( sSubRuleset.length() > 0 )							
+				InterpretRule(pSeg, sSubRuleset);			
 
 			break;
 		}		
@@ -351,35 +357,27 @@ bool LSystem::IdentifySubBranchRules( const std::string & sRule, const int nOpen
 
 	return true;
 }
-Segment* LSystem::AddSegment( Segment* pParent, const glm::mat4 & mModel )
-{
-	// Rotation for this segment has already been computed (in mModel)
+Segment* LSystem::AddSegment( Segment* pParent )
+{		
+	// compute a vector that represents a 10 degree z axis rotation
+	using glm::normalize;
+	using glm::rotateZ;
 
-	if( ! pParent )
-		return NULL;
+	vec3 vDelta			= vec3(0,1,0);
+	vDelta				= rotateZ( vDelta, 15.0f );
+	m_vNextDirection	= normalize( m_vNextDirection + vDelta );
+	Segment* pSeg		= new (std::nothrow) Segment( pParent, m_vNextDirection );
 	
-	float	rSegLength;
-	float	rGenScaler;
-	int		nGeneration	= pParent->Generation();
-	
-	switch( nGeneration )
+	if( pParent )
 	{
-		case 0:  rGenScaler = 1.0f;  break;
-		case 1:  rGenScaler = 0.75f; break;
-		case 2:  rGenScaler = 0.70f;  break;
-		case 3:  rGenScaler = 0.55f;  break;
-		default: rGenScaler = 0.40f; break;
+		if( pSeg )
+			pParent->AddChild( pSeg );
 	}
-	
-	// compute segment length
-	if( pParent->Generation() != 0 )
-		rSegLength = ( pParent->Length() == 0 ) ? m_rInitialSegLength : pParent->Length() * rGenScaler;	
 	else
-		rSegLength	= m_rInitialSegLength;	
-	
-
-	Segment* pSeg = new Segment( pParent, mModel, rSegLength, m_nMaxGenerations );
-	pParent->AddChildSeg( pSeg );
+	{
+		if( ! m_pRootNode )
+			m_pRootNode = pSeg;
+	}
 
 	return pSeg;
 }
@@ -414,20 +412,20 @@ void LSystem::PersistSet( const std::string & sFile )
 	}
 	catch(...)
 	{		
-		AppLog::Ref().LogMsg( "unanticipated exception caught in %s", __FUNCTION__ );
+		AppLog::Ref().LogMsg( "%s: unanticipated exception caught", __FUNCTION__ );
 		ATLASSERT(0);
 	}
 }
 
-std::ostream & operator << ( std::ostream & out, const LSystem & r )
+std::ofstream & operator << ( std::ofstream & out, const LSystem & r )
 {
-	out << "l-system"			<< " ";
-	out << r.MaxGenerations()	<< " ";
-	out << r.Angle()			<< " ";
-	out << r.InitialSegLength() << " ";
-	out << r.InitialPos().x		<< " ";
-	out << r.InitialPos().y		<< " ";
-	out << r.InitialPos().z		<< " ";
+	out << "l-system\n";
+	out << "max-gen "	<< r.MaxGenerations()	<< "\n";
+	out << "angle "		<< r.Angle()			<< "\n";
+	out << "seg-len "	<< r.InitialSegLength() << "\n";
+	out << "initpos-x "	<< r.InitialPos().x		<< "\n";
+	out << "initpos-y "	<< r.InitialPos().y		<< "\n";
+	out << "initpos-z "	<< r.InitialPos().z		<< "\n";
 
 	for( unsigned int n = 0; n < r.Rules().size(); n ++ )
 	{
@@ -437,10 +435,11 @@ std::ostream & operator << ( std::ostream & out, const LSystem & r )
 
 	return out;
 }
-std::istream & operator >> ( std::istream & in, LSystem & r )
+std::ifstream & operator >> ( std::ifstream & in, LSystem & r )
 {
 	using std::string;
 	using std::vector;
+	using glm::vec3;
 
 	char			sBuffer[1024];
 	vector<string>	vsRules;
@@ -452,12 +451,12 @@ std::istream & operator >> ( std::istream & in, LSystem & r )
 
 	in >> sBuffer;			// ignore this, it's just for human readability
 
-	in >> nMaxGenerations;
-	in >> rAngle;
-	in >> rInitialSegLen;
-	in >> x;
-	in >> y;
-	in >> z;
+	in >> sBuffer >> nMaxGenerations;
+	in >> sBuffer >> rAngle;
+	in >> sBuffer >> rInitialSegLen;
+	in >> sBuffer >> x;
+	in >> sBuffer >> y;
+	in >> sBuffer >> z;
 
 	while( in.good() )
 	{
@@ -466,8 +465,14 @@ std::istream & operator >> ( std::istream & in, LSystem & r )
 		if( string(sBuffer).length() > 0 )
 			vsRules.push_back(sBuffer);
 	}
-
-	r = LSystem(nMaxGenerations, rAngle, rInitialSegLen, glm::vec3(x, y, z), vsRules);
+		
+	r.Uninitialize();
+	r.MaxGenerations( nMaxGenerations );
+	r.Angle( rAngle );
+	r.InitialSegLength( rInitialSegLen );
+	r.InitialPosition( glm::vec3(x,y,z) );
+	r.Rules( vsRules );
+	r.Initialize();
 
 	return in;
 }
