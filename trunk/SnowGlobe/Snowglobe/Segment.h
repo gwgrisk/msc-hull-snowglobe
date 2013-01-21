@@ -14,8 +14,10 @@ public:
 
 private:
 	glm::vec3		_vPosition;				// base position
-	glm::vec3		_vPosDelta;
+	glm::vec3		_vTipPosition;			// tip position
 	glm::vec3		_vOrientation;			// normalized direction
+	glm::mat4		_mOrientation;
+	glm::vec3		_vPosDelta;
 	glm::vec3		_vDeltaOrientation;
 	
 	int				_nGeneration;
@@ -43,22 +45,29 @@ public:
 	void DeleteChildren();
 
 	// inline accessors
-	const Segment* Parent() const 			{ return _pParent; }
-	ChildSegments & ChildSegs()				{ return _ChildSegments; }	
-	const int Generation()					{ return _nGeneration; }
+	const Segment* Parent() const 				{ return _pParent; }
+	ChildSegments & ChildSegs()					{ return _ChildSegments; }	
+	const int Generation()						{ return _nGeneration; }
 
-	const glm::vec3 Pos() const 			{ return _vPosition; }	
-	const glm::vec3 PosDelta() const		{ return _vPosDelta; }		
-	const glm::vec3 & Orientation() const	{ return _vOrientation; } 	
-	const glm::vec3 OrientDelta() const		{ return _vDeltaOrientation; }	
-	const real Length() const 				{ return _rLength; }
+	const glm::vec3 Pos() const 				{ return _vPosition; }
+	const glm::vec3 TipPos() const				{ return _vTipPosition; }
+	const glm::vec3 & Orientation() const		{ return _vOrientation; }
+	const glm::mat4 & OrientationMtx() const	{ return _mOrientation; }
+	const real Length() const 					{ return _rLength; }
 
-	void Pos( const glm::vec3 & r ) 		{ _vPosition			= r; }
-	void Orientation( const glm::vec3 & r )	{ _vOrientation			= r; }
-	void Length( const real r ) 			{ _rLength				= r; }
-
-	void PosDelta( const glm::vec3 & r )	{ _vPosDelta			= r; }	
-	void OrientDelta( const glm::vec3 & r )	{ _vDeltaOrientation	= r; }
+	const glm::vec3 PosDelta() const			{ return _vPosDelta; }			
+	const glm::vec3 OrientDelta() const			{ return _vDeltaOrientation; }	
 	
-	const real Scale() const				{ return _rScale; }
+
+	void Pos( const glm::vec3 & r ) 			{ _vPosition			= r; }
+	void TipPos( const glm::vec3 & r )			{ _vTipPosition			= r; }
+	void Orientation( const glm::vec3 & r )		{ _vOrientation			= r; }
+	void OrientationMtx( const glm::mat4 & r)	{ _mOrientation		= r; }
+	void Length( const real r ) 				{ _rLength				= r; }
+	const real Scale() const					{ return _rScale; }
+
+	void PosDelta( const glm::vec3 & r )		{ _vPosDelta			= r; }	
+	void OrientDelta( const glm::vec3 & r )		{ _vDeltaOrientation	= r; }
+	
+	
 };

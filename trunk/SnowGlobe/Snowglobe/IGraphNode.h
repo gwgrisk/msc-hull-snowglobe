@@ -67,6 +67,7 @@ public:
 	SceneGraph* Graph()						{ return m_pGraph; }
 	void SetId( const std::string & s )		{ m_sId = s; }
 	void SetParent( IGraphNode* pParent )	{ m_pParent = pParent; }
+	bool HasChildNodes() const				{ return m_ChildNodes.size() > 0 ? true : false;  }
 };
 
 typedef std::list<IGraphNode*>::iterator NItr;

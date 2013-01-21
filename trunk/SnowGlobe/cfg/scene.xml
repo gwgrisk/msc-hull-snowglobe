@@ -28,7 +28,6 @@
 		<parent-object name="terrain" />
 		<geometry="sphere" radius='4.0' stacks='15' slices='15' colour="1.0,1.0,1.0,0.8" />
 	</actor>
-
 </actors>
 
 <actors>

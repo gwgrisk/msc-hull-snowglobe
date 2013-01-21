@@ -584,7 +584,8 @@ HRESULT Snow::Update( const float & rSecsDelta )
 						m_Data.Stack();	
 
 	// Update child nodes
-	IGraphNode::UpdateChildren( rSecsDelta );
+	if( IGraphNode::HasChildNodes() )
+		IGraphNode::UpdateChildren( rSecsDelta );
 
 	return S_OK;
 }

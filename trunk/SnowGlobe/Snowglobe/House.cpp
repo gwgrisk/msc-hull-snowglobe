@@ -450,7 +450,8 @@ HRESULT House::Update( const float & rSecsDelta )
 						m_Data.Stack();
 
 	// Updates child nodes
-	IGraphNode::UpdateChildren( rSecsDelta );
+	if( IGraphNode::HasChildNodes() )
+		IGraphNode::UpdateChildren( rSecsDelta );
 
 	return S_OK;
 }

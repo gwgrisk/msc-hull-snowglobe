@@ -98,6 +98,8 @@ Tree::~Tree()
 
 bool Tree::Initialize()
 {	
+	// TODO: If any init step fails, then the object might be left half initialized
+	// fix this with a call to Uninitialize()!!!
 	using std::vector;
 	using std::string;
 	using AntiMatter::AppLog;
@@ -109,53 +111,57 @@ bool Tree::Initialize()
 
 	if( ! InitializeTextures() )
 	{
+		Uninitialize();
 		AppLog::Ref().LogMsg("%s failed to load textures", __FUNCTION__);
 		return false;
 	}
 
 	if( ! InitializeGeometry() )
 	{
+		Uninitialize();
 		AppLog::Ref().LogMsg("%s initialize geometry failed for cylinder", __FUNCTION__ );
 		return false;
 	}	
 
 	if( ! GetShader( WireFrame ) )
 	{
+		Uninitialize();
 		AppLog::Ref().LogMsg("%s failed to initialize shaders for the tree", __FUNCTION__);
 		return false;
 	}
 
 	if( ! InitializeVbo(m_Cylinder) )
 	{
+		Uninitialize();
 		AppLog::Ref().LogMsg("%s failed to initialize vbo", __FUNCTION__);
 		return false;
 	}
 
 	if( ! InitializeVao() )
 	{
+		Uninitialize();
 		AppLog::Ref().LogMsg("%s failed to initialize vao", __FUNCTION__);
 		return false;		
 	}		
 	
 	if( ! InitializeLSystem() )
 	{
-		AppLog::Ref().LogMsg( "%s failed to initialize the LSystem", __FUNCTION__ );
-
 		Uninitialize();
+		AppLog::Ref().LogMsg( "%s failed to initialize the LSystem", __FUNCTION__ );
 		return false;
 	}	
 
 	HRESULT hr = InitializeLTree();
 	if( ! SUCCEEDED(hr) )
 	{
-		AppLog::Ref().LogMsg(
-			"Tree::Initialize() failed while attempting to initialize the LTree: %s",
-			_com_error(hr).ErrorMessage()
-		);
-
 		Uninitialize();
+		AppLog::Ref().LogMsg(
+			"%s failed while attempting to initialize the LTree: %s",
+			__FUNCTION__,
+			_com_error(hr).ErrorMessage()
+		);		
 		return false;
-	}		
+	}
 
 	return true;
 }
@@ -376,6 +382,8 @@ bool Tree::SetShaderArgs()
 	vec4 vColor[2] = { vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0) };
 	m_pEffect->AssignUniformVec4( string("wfColour"),	vColor[nFlipIt] );
 	AppLog::Ref().OutputGlErrors();
+
+	glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
 	
 	return true;
 }
@@ -474,7 +482,8 @@ HRESULT Tree::Update( const float & rSecsDelta )
 						m_Data.Stack();
 	
 	// Updates child nodes
-	IGraphNode::UpdateChildren( rSecsDelta );
+	if( IGraphNode::HasChildNodes() )
+		IGraphNode::UpdateChildren( rSecsDelta );
 	
 	return S_OK;
 }
@@ -502,81 +511,107 @@ HRESULT Tree::Render()
 	using glm::mat3;
 	using glm::vec3;
 	using std::string;
+	using std::for_each;
 	using AntiMatter::AppLog;
-	
-	for( LTree::iterator n = m_LTree.begin(); n != m_LTree.end(); n ++ )
-	{
-		Generation i = (*n);
 
-		// flip the branch colour for the next generation
-		nFlipIt = 1-nFlipIt;
-	
-		for( Generation::iterator j = i.begin(); j != i.end(); j ++ )
+	int nGeneration = 0;
+	int nSegment	= 0;
+
+	nFlipIt = 0;
+
+	for_each( m_LTree.begin(), m_LTree.end(),
+		[&]( Generation & gen )
 		{
-			// Get the next seg
-			Segment *		pSeg		= *j;
-			const Segment * pParent		= pSeg->Parent();
-			
-			// compute the translation delta required to translate to the end of the parent segment
-			real rParentLength;
-			vec3 vTranslation;
-			vec3 vPos;
+			nSegment	= 0;			
 
-			if( pSeg->Generation()  > 0 )
-			{
-				rParentLength		= pParent->Scale() * m_Cylinder.Length();
-				vTranslation		= pParent->Orientation() * rParentLength;
-				vPos				= pParent->Pos() + vTranslation;
+			for_each( gen.begin(), gen.end(),
+				[&]( Segment* pSeg )
+				{
+					const Segment* pParent = pSeg->Parent();
+					vec3 vPos;
+					vec3 vTipPos;
+					real rLength;
 
-				pSeg->PosDelta( vTranslation );
-				pSeg->Pos( vPos );
-			}
-			else
-			{
-				mat4 mTmp			= m_Data.W();
-				vPos				= vec3( mTmp[3][0], mTmp[3][1], mTmp[3][2] );
+					// position and length of segment
+					if( pSeg->Generation()  > 0 )
+					{
+						vPos		= pParent->TipPos();
+						rLength		= pSeg->Scale() * m_Cylinder.Length();
+					}
+					else
+					{
+						mat4 m		= m_Data.W();
+						vPos		= vec3( m[3][0], m[3][1], m[3][2] );
+						rLength		= pSeg->Scale() * m_Cylinder.Length();
+					}
 
-				pSeg->Orientation( vec3(0,1,0) );
-				pSeg->PosDelta( vec3(0,0,0) );
-				pSeg->Pos( vPos );
-			}
+					pSeg->Pos( vPos );
+					pSeg->Length( rLength );
 
-			// combine trans, rot, scale into a matrix
-			mat4 mW(1.0f);
+					// m[] = T * R * S
+					glm::mat4 mW(1.0f);
+					real rAngle = (nGeneration % 2 == 0 ? 30.0f : 20.0f);
+					real rX = -90.0f + rAngle * (nGeneration+1);
+					real rZ = rAngle * (nSegment);
 
-			mW *= CalcSegOrientationMatrix( pSeg->Orientation(), vPos );
+					// T
+					if( pSeg->Generation() > 0 )
+						mW = glm::translate( mat4(1.0f), pParent->TipPos() );
+					else
+						mW = glm::translate( mat4(1.0f), pSeg->Pos() );
+
+					
+					if( pSeg->Generation() > 0 )
+					{
+						// R
+						mW *= glm::rotate( mat4(1.0f), rX, vec3(1, 0, 0) );
+						mW *= glm::rotate( mat4(1.0f), rZ, vec3(0, 0, 1) );
+					}
+					
+					// S
+					mW *= glm::scale( mat4(1.0f), glm::vec3(pSeg->Scale()) );
+
+					// orientation mtx
+					pSeg->OrientationMtx( mat4(mat3(mW)) );
+
+					// orientation vector
+					glm::vec4 vO = mW * glm::vec4(0, 1, 0, 0);
+					pSeg->Orientation(glm::normalize(vec3(vO)));
+					
+					// tip pos
+					vTipPos	= vPos + (pSeg->Orientation() * pSeg->Length());
+					pSeg->TipPos( vTipPos );
+					
+					// draw the branch					
+					if( m_pEffect )
+					{
+						// matrices
+						mat4 mModelView = m_pGraph->Cam().V() * m_Data.Stack() * mW;
+						mat4 mMVP		= m_pGraph->Proj().P() * m_pGraph->Cam().V() * m_Data.Stack() * mW;
+
+						mat3 mNormal(mModelView);
+						mNormal = glm::transpose(mNormal._inverse());
+
+						m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
+						m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+						m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
 				
-			if( pSeg->Generation()  > 0 )
-				mW *= glm::translate( mat4(1.0f), pSeg->PosDelta() );			
+						glDrawElements(
+							GL_TRIANGLE_STRIP,
+							(((m_Cylinder.Slices()+1) * 2) * m_Cylinder.Stacks()),
+							GL_UNSIGNED_SHORT,
+							(GLvoid*)m_Cylinder.Indices()[0]
+						);
+					}
 
-			//mW *= glm::scale( mat4(1.0f), glm::vec3(pSeg->Scale()) );
-			
-
-			// draw the branch						
-			if( m_pEffect )
-			{				
-				// matrices
-				mat4 mModelView = m_pGraph->Cam().V() * m_Data.Stack() * mW;
-				mat4 mMVP		= m_pGraph->Proj().P() * m_pGraph->Cam().V() * m_Data.Stack() * mW;
-
-				mat3 mNormal(mModelView);
-				mNormal = glm::transpose(mNormal._inverse());
-
-				m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
-				m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
-				m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
-
-				glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
-
-				glDrawElements(
-					GL_TRIANGLE_STRIP,
-					(((m_Cylinder.Slices()+1) * 2) * m_Cylinder.Stacks()),
-					GL_UNSIGNED_SHORT,
-					(GLvoid*)m_Cylinder.Indices()[0]
-				);
-			}
+					nFlipIt		= 1-nFlipIt;
+					nSegment ++;
+				}
+			);
+						
+			nGeneration ++;
 		}
-	}	
+	);
 
 	return S_OK;
 }
@@ -631,8 +666,6 @@ glm::mat4 Tree::CalcSegOrientationMatrix( const glm::vec3 & vOrientation, const 
     float c2 = c1 ? v.x / c1 : 1.0f;
     float s2 = c1 ? v.y / c1 : 0.0f;
 	
-
-		
 	return glm::mat4 (
 		v.x,	-s2,	-s1*c2,		0,
 		v.y,	c2,		-s1*c2,		0,

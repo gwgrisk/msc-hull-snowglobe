@@ -160,7 +160,7 @@ void Cylinder::CreateRingVertices()
 	using glm::normalize;
 
 	float rHeight		= m_rStackHeight * m_nStacks;
-	float rYStart		= -0.5f * rHeight;
+	// float rYStart	= -0.5f * rHeight;
 	float rSliceStep	= (1.0f / m_nSlices) * 2.0f * g_Pi;
 	float rStackStep	= (1.0f / m_nStacks) * rHeight;	
 	float rRadiusStep	= (1.0f / m_nStacks) * (m_rTipRadius - m_rBaseRadius);
@@ -222,9 +222,9 @@ void Cylinder::CreateStackIndices()
 	// 1 triangle (fan? strip?) per base/tip
 	// e.g. you should not attempt to draw this with just one draw call.
 
-	unsigned short nRingVerts = m_nSlices + 1;
-	unsigned short n = 0;
 
+	unsigned short nRingVerts	= m_nSlices + 1;
+	unsigned short n			= 0;
 	
 	for( unsigned short i = 0; i < m_nStacks; ++ i )
 	{		
@@ -234,8 +234,7 @@ void Cylinder::CreateStackIndices()
 			_indices.push_back( (unsigned short)m_nSlices + n );			
 		}
 	}
-
-	n++;
+	
 
 	/*
 	unsigned short nRingVerts = m_nSlices + 1;
@@ -265,7 +264,7 @@ void Cylinder::CreateStackIndices()
 	/*
 	for( unsigned short i = 0; i < m_nStacks; ++ i )
 	{		
-		for( unsigned short j = 0; j <= m_nSlices; ++ j )
+		for( unsigned short j = 0; j < m_nSlices; ++ j )
 		{
 			// 1
 			_indices.push_back( (i+1) * m_nSlices + j );

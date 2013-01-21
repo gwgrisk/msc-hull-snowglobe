@@ -382,6 +382,7 @@ HRESULT Light::Update( const float & rSecsDelta )
 
 	// Updates child nodes
 	// Lights don't have any children, so we can skip this step
+	//if( IGraphNode::HasChildNodes() )
 	//IGraphNode::UpdateChildren( rSecsDelta );
 
 	using glm::mat4;
