@@ -11,13 +11,16 @@
 #include "Material.h"
 #include "Vbo.h"
 #include <vector>
+#include <glm\glm.hpp>
 
-
+class Segment;
 class Effect;
 
 class Tree :	public IGraphNode,
 				public glex
 {
+	friend class Segment;
+
 private:	
 	typedef std::vector<Segment*>	Generation;
 	typedef std::vector<Generation>	LTree;
@@ -54,6 +57,7 @@ private:
 	bool InitializeTextures();
 	bool InitializeVbo( IGeometry & geometry );
 	bool InitializeVao();
+	bool InitializePerVertexColour( const glm::vec4 & col );
 
 	bool GetShader(const eTreeShader e);
 	bool SetShaderArgs();
@@ -62,6 +66,8 @@ private:
 	HRESULT InitializeLTree();
 	void AddSegChildren( Segment* pSeg );
 	void AddSegment( Segment* pSeg );	
+
+	void RenderSegment( Segment* pSeg );
 
 	glm::mat4 CalcSegOrientationMatrix(const glm::vec3 & vOrientation, const glm::vec3 & vPos );
 
@@ -74,6 +80,8 @@ public:
 	~Tree();
 
 	const bool Initialized() const	{ return m_bInitialized; }
+
+	float CylinderLength() { return m_Cylinder.Length(); }
 
 	// IGraphNode
 	HRESULT Update( const float & rSecsDelta );

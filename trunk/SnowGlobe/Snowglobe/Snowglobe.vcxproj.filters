@@ -354,12 +354,6 @@
     <None Include="..\Shaders\textured-phong.vert">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="..\Shaders\tree-wireframe.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="..\Shaders\tree-wireframe.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
     <None Include="..\Shaders\Snow.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
@@ -385,6 +379,12 @@
       <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="..\Shaders\globe.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\wireframe.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\wireframe.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>

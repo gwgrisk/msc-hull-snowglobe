@@ -30,17 +30,19 @@ LSystem::LSystem() :
 	m_rAngle			( 0.0f ),
 	m_rInitialSegLength	( 0.0f ),
 	m_vInitialPosition	( glm::vec3(0.0f) ),
-	m_vNextDirection	( glm::vec3(0.0f) )
+	m_vNextDirection	( glm::vec3(0.0f) ),
+	_pTree				( nullptr )
 {
 }
-LSystem::LSystem( const std::string & sCfgFile ) :
+LSystem::LSystem( Tree* pTree, const std::string & sCfgFile ) :
 	m_bInitialized		( false ),
 	m_nMaxGenerations	( 0 ),
 	m_pRootNode			( NULL ),
 	m_rAngle			( 0.0f ),
 	m_rInitialSegLength	( 0.0f ),
 	m_vInitialPosition	( glm::vec3(0.0f) ),
-	m_vNextDirection	( glm::vec3(0.0f) )
+	m_vNextDirection	( glm::vec3(0.0f) ),
+	_pTree				( pTree )
 {
 	// read in ruleset from disk, then Initialize
 	using AntiMatter::Shell::FileExists;
@@ -61,14 +63,15 @@ LSystem::LSystem( const std::string & sCfgFile ) :
 		// this->Initialize();
 	}
 }
-LSystem::LSystem( const int & nMaxGenerations, const float rAngle, const float rInitSegLen, const glm::vec3 & vInitialPos, const vector<string> & sRuleset ) :
+LSystem::LSystem( Tree* pTree, const int & nMaxGenerations, const float rAngle, const float rInitSegLen, const glm::vec3 & vInitialPos, const vector<string> & sRuleset ) :
 	m_bInitialized		( false ),
 	m_nMaxGenerations	( nMaxGenerations ),
 	m_pRootNode			( NULL ),
 	m_rAngle			( rAngle ),
 	m_rInitialSegLength	( rInitSegLen ),
 	m_vInitialPosition	( vInitialPos ),
-	m_vNextDirection	( glm::vec3(0.0f) )
+	m_vNextDirection	( glm::vec3(0.0f) ),
+	_pTree				( pTree )
 {		
 	this->Rules( sRuleset );
 
@@ -87,7 +90,8 @@ LSystem::LSystem( const LSystem & r )  :
 	m_rAngle			( r.m_rAngle ),
 	m_rInitialSegLength	( r.m_rInitialSegLength ),
 	m_vInitialPosition	( r.m_vInitialPosition ),
-	m_vNextDirection	( r.m_vNextDirection )
+	m_vNextDirection	( r.m_vNextDirection ),
+	_pTree				( r._pTree )
 {	
 	Rules( r.m_Rules );
 	m_bInitialized = Initialize();
@@ -97,15 +101,14 @@ LSystem & LSystem::operator=( const LSystem & r )
 	if( &r != this )
 	{
 		this->Uninitialize();
-
 		this->m_nMaxGenerations		= r.m_nMaxGenerations;
 		this->m_rAngle				= r.m_rAngle;
 		this->m_rInitialSegLength	= r.m_rInitialSegLength;	
 		this->m_vInitialPosition	= r.m_vInitialPosition;
 		this->m_vNextDirection		= r.m_vNextDirection;
-	
-		this->Rules( r.m_Rules );
+		this->_pTree				= r._pTree;
 
+		this->Rules( r.m_Rules );
 		this->m_bInitialized = Initialize();	
 	}
 
@@ -241,7 +244,7 @@ void LSystem::InterpretRule( Segment* pCurrent, const std::string & sRule )
 		switch( cNextChar )
 		{
 		case 'F':	// generate a new segment
-			{
+			{				
 				if( m_pRootNode )
 				{
 					pSeg = AddSegment( pSeg );					
@@ -252,24 +255,22 @@ void LSystem::InterpretRule( Segment* pCurrent, const std::string & sRule )
 					pSeg		= m_pRootNode;
 				}
 
+				m_rAngle = 0.0f;
+
 				if( ! pSeg )
 					return;
 			}
 			break;
 
-		case '+':	// rotate anti-clockwise by fixed angle
+		case '+':
 			{
-				vec3 vDelta			= pSeg ? pSeg->Orientation() : vec3(0, 1, 0);
-				vDelta				= rotateX<real>( vDelta, 10.0f );
-				m_vNextDirection	= normalize(m_vNextDirection + vDelta);				// m_vNextDirection used in AddSegment()
+				m_rAngle = 10.0f;
 			}
 			break;
 
-		case '-':	// rotate clockwise by fixed angle
-			{				
-				vec3 vDelta			= pSeg ? pSeg->Orientation() : vec3(0, 1, 0);
-				vDelta				= rotateX( vDelta, -10.0f );
-				m_vNextDirection	= normalize(m_vNextDirection + vDelta);				// m_vNextDirection used in AddSegment()
+		case '-':
+			{
+				m_rAngle = -10.0f;				
 			}
 			break;
 
@@ -358,20 +359,14 @@ bool LSystem::IdentifySubBranchRules( const std::string & sRule, const int nOpen
 	return true;
 }
 Segment* LSystem::AddSegment( Segment* pParent )
-{		
-	// compute a vector that represents a 10 degree z axis rotation
-	using glm::normalize;
-	using glm::rotateZ;
+{	
+	Segment* pSeg = new (std::nothrow)
+					Segment( pParent, _pTree, m_rAngle );
 
-	vec3 vDelta			= vec3(0,1,0);
-	vDelta				= rotateZ( vDelta, 15.0f );
-	m_vNextDirection	= normalize( m_vNextDirection + vDelta );
-	Segment* pSeg		= new (std::nothrow) Segment( pParent, m_vNextDirection );
-	
 	if( pParent )
-	{
+	{		
 		if( pSeg )
-			pParent->AddChild( pSeg );
+			pParent->AddChild( pSeg );		
 	}
 	else
 	{

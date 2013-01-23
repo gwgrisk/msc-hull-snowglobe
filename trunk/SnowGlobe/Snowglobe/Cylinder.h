@@ -4,8 +4,8 @@
 #include <glm\glm.hpp>
 #include <vector>
 #include "IGeometry.h"
+#include "VertexClass.h"
 
-class CustomVertex;
 
 class Cylinder : public IGeometry
 {

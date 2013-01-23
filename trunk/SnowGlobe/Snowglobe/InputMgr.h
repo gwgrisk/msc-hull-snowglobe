@@ -26,6 +26,19 @@ private:
 	KeyState	m_Alt;
 	KeyState	m_Escape;
 
+	KeyState	m_F1;
+	KeyState	m_F2;
+	KeyState	m_F3;
+	KeyState	m_F4;
+	KeyState	m_F5;
+	KeyState	m_F6;
+	KeyState	m_F7;
+	KeyState	m_F8;
+	KeyState	m_F9;
+	KeyState	m_F10;
+	KeyState	m_F11;
+	KeyState	m_F12;
+
 public:
 	KeyData();
 
@@ -59,6 +72,19 @@ public:
 	const KeyState Alt() const		{ return m_Alt; }
 	const KeyState Escape() const	{ return m_Escape; }
 
+	const KeyState F1() const		{ return m_F1; }
+	const KeyState F2() const		{ return m_F2; }
+	const KeyState F3() const		{ return m_F3; }
+	const KeyState F4() const		{ return m_F4; }
+	const KeyState F5() const		{ return m_F5; }
+	const KeyState F6() const		{ return m_F6; }
+	const KeyState F7() const		{ return m_F7; }
+	const KeyState F8() const		{ return m_F8; }
+	const KeyState F9() const		{ return m_F9; }
+	const KeyState F10() const		{ return m_F10; }
+	const KeyState F11() const		{ return m_F11; }
+	const KeyState F12() const		{ return m_F12; }
+
 	// sets
 	void Up( const KeyState n )		{ m_Up		= n; }
 	void Down( const KeyState n )	{ m_Down	= n; }
@@ -69,9 +95,24 @@ public:
 	void Use( const KeyState n )	{ m_Use		= n; }
 	void Space( const KeyState n )	{ m_Space	= n; }
 	void Shift( const KeyState n )	{ m_Shift	= n; }
-	void Ctrl( const KeyState n )	{ m_Up		= n; }
-	void Alt( const KeyState n )	{ m_Up		= n; }
-	void Escape( const KeyState n )	{ m_Up		= n; }
+	void Ctrl( const KeyState n )	{ m_Ctrl	= n; }
+	void Alt( const KeyState n )	{ m_Alt 	= n; }
+	void Escape( const KeyState n )	{ m_Escape	= n; }
+
+	void F1( const KeyState n )		{ m_F1		= n; }
+	void F2( const KeyState n )		{ m_F2		= n; }
+	void F3( const KeyState n )		{ m_F3		= n; }
+	void F4( const KeyState n )		{ m_F4		= n; }
+	void F5( const KeyState n )		{ m_F5		= n; }
+	void F6( const KeyState n )		{ m_F6		= n; }
+	void F7( const KeyState n )		{ m_F7		= n; }
+	void F8( const KeyState n )		{ m_F8		= n; }
+	void F9( const KeyState n )		{ m_F9		= n; }
+	void F10( const KeyState n )	{ m_F10		= n; }
+	void F11( const KeyState n )	{ m_F11		= n; }
+	void F12( const KeyState n )	{ m_F12		= n; }
+
+
 };
 class MouseData
 {

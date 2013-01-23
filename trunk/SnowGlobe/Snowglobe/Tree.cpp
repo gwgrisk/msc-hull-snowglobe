@@ -20,6 +20,7 @@
 #include "Material.h"
 
 #include "slowglobe-cfg.h"
+#include "InputMgr.h"
 
 #include <GL\GL.h>
 #include <GXBase.h>
@@ -106,8 +107,7 @@ bool Tree::Initialize()
 	using glm::vec3;
 	
 	InitShaderNames();
-
-	InitializeMtl();
+	InitializeMtl();	
 
 	if( ! InitializeTextures() )
 	{
@@ -121,7 +121,14 @@ bool Tree::Initialize()
 		Uninitialize();
 		AppLog::Ref().LogMsg("%s initialize geometry failed for cylinder", __FUNCTION__ );
 		return false;
-	}	
+	}
+
+	if( ! InitializePerVertexColour( glm::vec4(0.4f, 0.2f, 0.2f, 1.0f) ) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s initialize per vertex colour failed for cylinder", __FUNCTION__ );
+		return false;
+	}
 
 	if( ! GetShader( WireFrame ) )
 	{
@@ -192,7 +199,7 @@ void Tree::InitShaderNames()
 	_ShaderNames.push_back(std::string("wireframe"));
 	_ShaderNames.push_back(std::string("flat"));
 	_ShaderNames.push_back(std::string("smooth"));
-	_ShaderNames.push_back(std::string("smooth-textured"));
+	_ShaderNames.push_back(std::string("textured-phong"));
 	_ShaderNames.push_back(std::string("bump-textured"));
 }
 bool Tree::InitializeMtl()
@@ -236,6 +243,21 @@ bool Tree::InitializeTextures()
 
 
 	return (m_texBark.Initialized() && m_texBump.Initialized());
+}
+bool Tree::InitializePerVertexColour( const glm::vec4 & col )
+{
+	// copies the specified colour to each vertex
+	CustomVertex* pVertices  =*(m_Cylinder.Vertices());
+	
+	for( int n = 0; n < m_Cylinder.VertCount(); n ++ )
+	{
+		pVertices[n].m_Colour[0] = col.r;
+		pVertices[n].m_Colour[1] = col.g;
+		pVertices[n].m_Colour[2] = col.b;
+		pVertices[n].m_Colour[3] = col.a;
+	}
+	
+	return true;
 }
 	
 bool Tree::InitializeVbo( IGeometry & geometry )
@@ -395,7 +417,7 @@ bool Tree::InitializeLSystem()
 	using glm::vec3;
 
 	// Initialize the LSystem from an existing config file.
-	m_LSystem = LSystem( g_Cfg.LSystemCfg() );
+	m_LSystem = LSystem( this, g_Cfg.LSystemCfg() );
 
 	// If no config file found for the LSystem, attempt to create one
 	// and initialize the LSystem from a hardcoded ruleset
@@ -406,7 +428,7 @@ bool Tree::InitializeLSystem()
 		vsRules.push_back( string("[3]-[3]+[3]") );
 		vsRules.push_back( string("FF+F") );
 
-		m_LSystem = LSystem( 6, 10.0f, 20.0f, vec3(0.0, 50.0, 0.0), vsRules );
+		m_LSystem = LSystem( this, 6, 10.0f, 20.0f, vec3(0.0, 50.0, 0.0), vsRules );
 
 		if( m_LSystem.Initialized() )
 			m_LSystem.PersistSet( g_Cfg.LSystemCfg() );
@@ -472,18 +494,65 @@ void Tree::AddSegment( Segment* pSeg )
 	m_LTree[nGeneration].push_back(pSeg);
 }
 
+void Tree::RenderSegment( Segment* pSeg )
+{
+	using glm::mat4;
+	using glm::mat3;
+	using glm::transpose;
+	using glm::inverse;
+	using std::string;
+
+	if( ! m_pEffect || ! pSeg )
+		return;
+	
+	mat4 mModelView = m_pGraph->Cam().V() * m_Data.Stack() * pSeg->mW();
+	mat4 mMVP		= m_pGraph->Proj().P() * m_pGraph->Cam().V() * m_Data.Stack() * pSeg->mW();
+
+	mat3 mNormal(mModelView);
+	mNormal = transpose(mNormal._inverse());
+
+	m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
+	m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+	m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
+				
+	glDrawElements(
+		GL_TRIANGLE_STRIP,
+		(((m_Cylinder.Slices()+1) * 2) * m_Cylinder.Stacks()),
+		GL_UNSIGNED_SHORT,
+		(GLvoid*)m_Cylinder.Indices()[0]
+	);
+}
 
 HRESULT Tree::Update( const float & rSecsDelta )
 {
+	if( rSecsDelta > 1.0f )
+		return S_OK;
+
 	m_Data.Stack()	= m_pParent->GetNodeData().Stack() * m_Data.W();
 	
 	m_Data.MVP()	=	m_pGraph->Proj().P() * 
 						m_pGraph->Cam().V() *
-						m_Data.Stack();
-	
+						m_Data.Stack();	
+
 	// Updates child nodes
 	if( IGraphNode::HasChildNodes() )
 		IGraphNode::UpdateChildren( rSecsDelta );
+
+	// handle keyboard input for changing currently selected tree shader
+	if( InputMgr::Ref().Keybd().F12() == KeyData::KeyDown )
+	{		
+		int nShader = (int) m_CurrentShader;
+		
+		nShader ++;
+
+		if( nShader > BumpTextured )
+			nShader = WireFrame;
+
+		if(! GetShader((eTreeShader)nShader) )
+			GetShader( WireFrame );
+
+		InputMgr::Ref().Keybd().F12(KeyData::KeyUp);
+	}
 	
 	return S_OK;
 }
@@ -494,123 +563,55 @@ HRESULT Tree::PreRender()
 	AppLog::Ref().OutputGlErrors();
 
 	if( ! m_pEffect )
-		return E_POINTER;	
+		return E_POINTER;
 
 	SetShaderArgs();	
 
-	glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
+	switch( m_CurrentShader )
+	{
+	case WireFrame:
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		break;
+
+	case Flat:		
+		glShadeModel(GL_FLAT);
+		glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+		break;
+
+	case Smooth:
+		break;
+
+	case SmoothTextured:
+		break;
+
+	case BumpTextured:
+		break;
+
+	}
 
 	return S_OK;
 }
 HRESULT Tree::Render()
 {
-	// iterate each generation of the LTree and then scale and position the cylinder, then draw it
-	// for each iteration of the tree
+	// iterate each generation of the LTree and 
+	// update and render each segment
 
-	using glm::mat4;
-	using glm::mat3;
-	using glm::vec3;
-	using std::string;
-	using std::for_each;
-	using AntiMatter::AppLog;
-
-	int nGeneration = 0;
-	int nSegment	= 0;
-
+	using std::for_each;	
+	
 	nFlipIt = 0;
 
 	for_each( m_LTree.begin(), m_LTree.end(),
 		[&]( Generation & gen )
-		{
-			nSegment	= 0;			
-
+		{			
 			for_each( gen.begin(), gen.end(),
 				[&]( Segment* pSeg )
 				{
-					const Segment* pParent = pSeg->Parent();
-					vec3 vPos;
-					vec3 vTipPos;
-					real rLength;
-
-					// position and length of segment
-					if( pSeg->Generation()  > 0 )
-					{
-						vPos		= pParent->TipPos();
-						rLength		= pSeg->Scale() * m_Cylinder.Length();
-					}
-					else
-					{
-						mat4 m		= m_Data.W();
-						vPos		= vec3( m[3][0], m[3][1], m[3][2] );
-						rLength		= pSeg->Scale() * m_Cylinder.Length();
-					}
-
-					pSeg->Pos( vPos );
-					pSeg->Length( rLength );
-
-					// m[] = T * R * S
-					glm::mat4 mW(1.0f);
-					real rAngle = (nGeneration % 2 == 0 ? 30.0f : 20.0f);
-					real rX = -90.0f + rAngle * (nGeneration+1);
-					real rZ = rAngle * (nSegment);
-
-					// T
-					if( pSeg->Generation() > 0 )
-						mW = glm::translate( mat4(1.0f), pParent->TipPos() );
-					else
-						mW = glm::translate( mat4(1.0f), pSeg->Pos() );
-
-					
-					if( pSeg->Generation() > 0 )
-					{
-						// R
-						mW *= glm::rotate( mat4(1.0f), rX, vec3(1, 0, 0) );
-						mW *= glm::rotate( mat4(1.0f), rZ, vec3(0, 0, 1) );
-					}
-					
-					// S
-					mW *= glm::scale( mat4(1.0f), glm::vec3(pSeg->Scale()) );
-
-					// orientation mtx
-					pSeg->OrientationMtx( mat4(mat3(mW)) );
-
-					// orientation vector
-					glm::vec4 vO = mW * glm::vec4(0, 1, 0, 0);
-					pSeg->Orientation(glm::normalize(vec3(vO)));
-					
-					// tip pos
-					vTipPos	= vPos + (pSeg->Orientation() * pSeg->Length());
-					pSeg->TipPos( vTipPos );
-					
-					// draw the branch					
-					if( m_pEffect )
-					{
-						// matrices
-						mat4 mModelView = m_pGraph->Cam().V() * m_Data.Stack() * mW;
-						mat4 mMVP		= m_pGraph->Proj().P() * m_pGraph->Cam().V() * m_Data.Stack() * mW;
-
-						mat3 mNormal(mModelView);
-						mNormal = glm::transpose(mNormal._inverse());
-
-						m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
-						m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
-						m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
-				
-						glDrawElements(
-							GL_TRIANGLE_STRIP,
-							(((m_Cylinder.Slices()+1) * 2) * m_Cylinder.Stacks()),
-							GL_UNSIGNED_SHORT,
-							(GLvoid*)m_Cylinder.Indices()[0]
-						);
-					}
-
-					nFlipIt		= 1-nFlipIt;
-					nSegment ++;
+					pSeg->Update(0);
+					RenderSegment(pSeg);
+					nFlipIt	= 1-nFlipIt;
 				}
 			);
-						
-			nGeneration ++;
-		}
+		}		
 	);
 
 	return S_OK;
@@ -621,10 +622,13 @@ HRESULT Tree::PostRender()
 
 	AppLog::Ref().OutputGlErrors();
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glBindTexture( GL_TEXTURE_2D,			0 );
-	glBindBuffer( GL_ARRAY_BUFFER,			0 );
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	0 );
+	
+	glShadeModel( GL_SMOOTH );
+	glPolygonMode(	GL_FRONT_AND_BACK,			GL_FILL);
+	glBindTexture(	GL_TEXTURE_2D,				0 );
+	glBindBuffer(	GL_ARRAY_BUFFER,			0 );
+	glBindBuffer(	GL_ELEMENT_ARRAY_BUFFER,	0 );
+
 	glBindVertexArray(0);
 	glUseProgram(0);
 
@@ -641,43 +645,4 @@ HRESULT Tree::DrawItem()
 	PostRender();
 
 	return S_OK;
-}
-
-glm::mat4 Tree::CalcSegOrientationMatrix( const glm::vec3 & vOrientation, const glm::vec3 & vPos  )
-{
-	// I'm attempting to create a rotation matrix that represents the 
-	// vOrientation matrix by splitting orientation vec3 into two 
-	// rotations.  rotation about the x and z axes respectively.
-
-	// here's the transformation matrix
-	// |cosθ cosφ   -sinθ   -cosθ sinφ|
-	// |sinθ cosφ    cosθ   -sinθ sinφ|
-	// |   sinφ       0         cosφ  |
-
-	UNREFERENCED_PARAMETER(vPos);
-    
-	const glm::vec3 & v = vOrientation;
-
-	/* Find cosφ and sinφ */
-    float c1 = sqrt(v.x * v.x + v.y * v.y);
-    float s1 = v.z;
-
-    /* Find cosθ and sinθ; if gimbal lock, choose (1,0) arbitrarily */
-    float c2 = c1 ? v.x / c1 : 1.0f;
-    float s2 = c1 ? v.y / c1 : 0.0f;
-	
-	return glm::mat4 (
-		v.x,	-s2,	-s1*c2,		0,
-		v.y,	c2,		-s1*c2,		0,
-		v.z,	0,		c1,			0,
-		0,		0,		0,			1
-	);
-	/*
-	return glm::mat4 (
-		v.x,	-s2,	-s1*c2,		0,
-		v.y,	c2,		-s1*c2,		0,
-		v.z,	0,		c1,			0,
-		vPos.x,	vPos.y,	vPos.z,		1
-	);
-	*/
 }

@@ -115,8 +115,8 @@
     <None Include="..\Shaders\textured-phong-alphamap.frag" />
     <None Include="..\Shaders\textured-phong.frag" />
     <None Include="..\Shaders\textured-phong.vert" />
-    <None Include="..\Shaders\tree-wireframe.frag" />
-    <None Include="..\Shaders\tree-wireframe.vert" />
+    <None Include="..\Shaders\wireframe.frag" />
+    <None Include="..\Shaders\wireframe.vert" />
     <None Include="..\Shaders\globe.frag" />
     <None Include="..\Shaders\globe.vert" />
     <None Include="level 0.cd" />

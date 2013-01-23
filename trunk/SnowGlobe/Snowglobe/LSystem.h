@@ -44,6 +44,7 @@ private:
 	float				m_rInitialSegLength;
 	glm::vec3			m_vInitialPosition;
 	glm::vec3			m_vNextDirection;
+	Tree*				_pTree;
 
 public:	
 	bool	ValidateRulesets();
@@ -56,8 +57,8 @@ public:
 
 public:
 	LSystem();
-	LSystem( const std::string & sCfgFile );
-	LSystem( const int & nMaxGenerations, const float rAngle, const float rInitSegLen, const glm::vec3 & vInitialPos, const std::vector<std::string> & sRuleset );
+	LSystem( Tree* pTree, const std::string & sCfgFile );
+	LSystem( Tree* pTree, const int & nMaxGenerations, const float rAngle, const float rInitSegLen, const glm::vec3 & vInitialPos, const std::vector<std::string> & sRuleset );
 	LSystem( const LSystem & );
 	LSystem & operator=( const LSystem & r );
 	~LSystem();

@@ -196,30 +196,41 @@ void Simulation::OnKeyboard(int key, bool down)
 		break;
 
 	case 112:// F1
+		InputMgr::Ref().Keybd().F1( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(0.0f);
 		break;
 
 	case 113:// F2
+		InputMgr::Ref().Keybd().F2( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(1.0f);
 		break;
 
 	case 114:// F3
+		InputMgr::Ref().Keybd().F3( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(2.0f);
 		break;
 
 	case 115:// F4
+		InputMgr::Ref().Keybd().F4( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(3.0f);
 		break;
 
 	case 116:// F5
+		InputMgr::Ref().Keybd().F5( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(4.0f);
 		break;
 
 	case 117:// F6
+		InputMgr::Ref().Keybd().F6( down ? KeyData::KeyDown : KeyData::KeyUp );
 		SeasonalTimeline::Ref().Speed(5.0f);
 		break;
 
+	case 118:// F7
+		InputMgr::Ref().Keybd().F7( down ? KeyData::KeyDown : KeyData::KeyUp );
+		break;
+
 	case 119:// F8
+		InputMgr::Ref().Keybd().F8( down ? KeyData::KeyDown : KeyData::KeyUp );
 		if( ! down )
 		{
 			SceneLights::LightsState ls =  m_pScene->Lights().GetLightsState();
@@ -228,8 +239,24 @@ void Simulation::OnKeyboard(int key, bool down)
 				m_pScene->Lights().SetLightsState( SceneLights::LightsState::spots );
 			else
 				m_pScene->Lights().SetLightsState( SceneLights::LightsState::sun );
-		}
-		
+		}		
+		break;
+
+	case 120:// F9
+		InputMgr::Ref().Keybd().F9( down ? KeyData::KeyDown : KeyData::KeyUp );
+		break;
+
+	case 121:// F10
+		InputMgr::Ref().Keybd().F10( down ? KeyData::KeyDown : KeyData::KeyUp );
+		break;
+
+	case 122:// F11
+		InputMgr::Ref().Keybd().F11( down ? KeyData::KeyDown : KeyData::KeyUp );
+		break;
+
+	case 123:// F12
+		InputMgr::Ref().Keybd().F12( down ? KeyData::KeyDown : KeyData::KeyUp );
+		// Cycle tree shader
 		break;
 
 	default:
@@ -237,6 +264,8 @@ void Simulation::OnKeyboard(int key, bool down)
 			switch( tolower(key) )
 			{
 				case 'm': // Cycle tree shader
+				{
+				}
 				break;
 
 				case 'p':	// Pause

@@ -196,7 +196,7 @@ bool SceneGraph::InitializeGraph()
 	pLake->GetNodeData().W() *= (tr * mW);
 	m_map.insert( ActorIdPair( pLake->Id(), pLake) );
 
-	/*
+	
 	// house
 	House* pHouse = new (std::nothrow) House(
 		this, 
@@ -214,7 +214,7 @@ bool SceneGraph::InitializeGraph()
 	tr = translate( mat4(1.0), vec3(20, 412, -125) );	
 	pHouse->GetNodeData().W() *= tr;
 	m_map.insert( ActorIdPair( pHouse->Id(), pHouse) );
-	*/
+	
 
 	// Tree
 	Tree* pTree = new (std::nothrow) Tree(
@@ -229,7 +229,7 @@ bool SceneGraph::InitializeGraph()
 	{
 		AppLog::Ref().LogMsg("SceneGraph failed to allocate heap for Tree");
 		return false;
-	}		
+	}
 	
 	tr = translate( mat4(1.0), vec3(0, 313, 45) );		
 	pTree->GetNodeData().W() *= tr;
