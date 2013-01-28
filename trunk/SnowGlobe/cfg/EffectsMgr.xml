@@ -56,9 +56,8 @@
 		<InputAttributes>
 			<VertexDescription type="CustomVertex" stride="72" />
 			<attrib fieldname="VertexPosition" size="3" offset="0" />
-			<attrib fieldname="VertexNormal" size="3" offset="3" />
-			<attrib fieldname="VertexColour" size="4" offset="8" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />			
 		</InputAttributes>
-	</Effect>	
+	</Effect>
 
 </Effects>

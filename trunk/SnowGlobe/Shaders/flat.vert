@@ -1,5 +1,4 @@
 // flat vertex shader
-
 #version 400
 
 subroutine vec4 FlatLightIntensity();
@@ -41,7 +40,7 @@ flat out vec4 vLightIntensity;
 // locals (saves passing them around as args!)
 vec3 vViewDirection;
 vec3 vSunDirection;
-mat4 mSpotDirections[4]; 
+mat4 mSpotDirections; 
 vec3 vtNormal;
 
 
@@ -101,7 +100,7 @@ void main()
 	for( int n = 0; n < 4; ++ n )
 	{
 		vLightPos = vec3( lights[n].Position );
-		vLightDir = normalize( vLightPos - vVertexInViewSpace );
+		vLightDir = normalize( vLightPos - vVertexPos );
 		
 		mSpotDirections[n] = vec4( vLightDir, 0.0f );
 	}
