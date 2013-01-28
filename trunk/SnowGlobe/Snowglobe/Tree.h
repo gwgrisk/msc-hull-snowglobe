@@ -38,6 +38,8 @@ private:
 	
 	eTreeShader						m_CurrentShader;	
 	Effect*							m_pEffect;		// currently selected effect
+	GLuint							m_nSunSub;
+	GLuint							m_nSpotlightSub;
 	Vbo<CustomVertex> *				m_pVbo;			// vertex data
 	GLuint							m_nVaoId;
 	
@@ -61,6 +63,7 @@ private:
 
 	bool GetShader(const eTreeShader e);
 	bool SetShaderArgs();
+	void SelectShaderSubroutine( GLenum shadertype = GL_FRAGMENT_SHADER );
 
 	bool InitializeLSystem();	
 	HRESULT InitializeLTree();

@@ -56,7 +56,20 @@
 		<InputAttributes>
 			<VertexDescription type="CustomVertex" stride="72" />
 			<attrib fieldname="VertexPosition" size="3" offset="0" />
-			<attrib fieldname="VertexNormal" size="3" offset="3" />			
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexColour" size="4" offset="8" />
+		</InputAttributes>
+	</Effect>
+
+	<Effect name="smooth" autobuild="true">
+		<Shader type="vertex" name="smooth.vert" />
+		<Shader type="fragment" name="smooth.frag" />
+
+		<InputAttributes>
+			<VertexDescription type="CustomVertex" stride="72" />
+			<attrib fieldname="VertexPosition" size="3" offset="0" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexColour" size="4" offset="8" />
 		</InputAttributes>
 	</Effect>
 

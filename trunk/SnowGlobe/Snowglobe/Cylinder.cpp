@@ -196,7 +196,7 @@ void Cylinder::CreateRingVertices()
 			cv.m_Bitangent[X]	= dr * c;
 			cv.m_Bitangent[Y]	= -rHeight;
 			cv.m_Bitangent[Z]	= dr * s;
-						
+
 			vec3 vT(cv.m_Tangent[X], cv.m_Tangent[Y], cv.m_Tangent[Z]);
 			vec3 vB(cv.m_Bitangent[X], cv.m_Bitangent[Y], cv.m_Bitangent[Z]);
 			vec3 vN = glm::normalize( glm::cross(vT, vB) );

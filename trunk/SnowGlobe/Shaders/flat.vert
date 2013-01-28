@@ -24,6 +24,7 @@ struct MaterialInfo
 // attributes
 in vec3 VertexPosition;
 in vec3 VertexNormal;
+in vec3 VertexColour;
 
 // uniforms
 uniform vec3			vViewPosition;	// camera position (view space)

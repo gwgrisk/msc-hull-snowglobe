@@ -108,6 +108,8 @@
     <None Include="..\Shaders\flat.vert" />
     <None Include="..\Shaders\Lake.frag" />
     <None Include="..\Shaders\Lake.vert" />
+    <None Include="..\Shaders\smooth.frag" />
+    <None Include="..\Shaders\smooth.vert" />
     <None Include="..\Shaders\Snow.frag" />
     <None Include="..\Shaders\Snow.vert" />
     <None Include="..\Shaders\Snowfall.frag" />

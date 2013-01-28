@@ -387,6 +387,12 @@
     <None Include="..\Shaders\wireframe.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\Shaders\smooth.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\smooth.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

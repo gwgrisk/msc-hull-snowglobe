@@ -38,6 +38,8 @@ Tree::Tree() :
 	m_bInitialized				( false ),
 	m_CurrentShader				( WireFrame ),
 	m_pEffect					( NULL ),
+	m_nSunSub					( 0 ),
+	m_nSpotlightSub				( 0 ),
 	m_pVbo						( NULL ),
 	m_nVaoId					( 0 ),
 	m_rInitialSegLength			( 400.0f )
@@ -53,6 +55,8 @@ Tree::Tree( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_sBumpFile					( sBump ),
 	m_CurrentShader				( WireFrame ),
 	m_pEffect					( NULL ),
+	m_nSunSub					( 0 ),
+	m_nSpotlightSub				( 0 ),
 	m_pVbo						( NULL ),
 	m_nVaoId					( 0 ),
 	m_rInitialSegLength			( 400.0f )
@@ -208,7 +212,7 @@ bool Tree::InitializeMtl()
 
 	m_material.Ka( vec3(0.3, 0.3, 0.3) );
 	m_material.Kd( vec3(0.7, 0.7, 0.7) );
-	m_material.Ks( vec3(0.0, 0.0, 0.0) );
+	m_material.Ks( vec3(0.2, 0.1, 0.1) );
 	m_material.Shininess( 1.0f );
 
 	return true;
@@ -357,7 +361,7 @@ bool Tree::SetShaderArgs()
 		return false;
 	
 	// Select Shader
-	glUseProgram( m_pEffect->Id() );
+	glUseProgram( m_pEffect->Id() );	
 
 	// bind buffers
 	glBindVertexArray( m_nVaoId );
@@ -367,47 +371,83 @@ bool Tree::SetShaderArgs()
 	glBindTexture( GL_TEXTURE_2D,			m_texBump.TextureId() );
 	
 	// Assign uniform variables
-	// lights
-	vector<Light*> lights = this->Graph()->Lights().Lights();
+
+	// camera position (transformed to view space)
+	vec3 vCamPos = vec3(Graph()->Cam().V() * vec4( Graph()->Cam().Pos(), 1.0));
+	m_pEffect->AssignUniformVec3( string("vViewPosition"), vCamPos );
+
+	// lights - light[0-3] = spotlights, light[4] = sun
+	const vector<Light*> & lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		vec4 lightPos	= lights[x]->Pos();
-		vec3 lightInt	= lights[x]->Intensity();
-		
-		vec4 eyeLightPos = this->Graph()->Cam().V() * lightPos;
+		// light position (transformed to view space)
+		glm::vec4 vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
+		glm::vec3 la		= lights[x]->La();
+		glm::vec3 ld		= lights[x]->Ld();
+		glm::vec3 ls		= lights[x]->Ls();
 
-		stringstream ssP, ssI;
-			
+		stringstream ssP, ssLa, ssLd, ssLs;
 		ssP  << "lights[" << x << "].Position";
-		ssI << "lights[" << x << "].Intensity";		
+		ssLa << "lights[" << x << "].La";
+		ssLd << "lights[" << x << "].Ld";
+		ssLs << "lights[" << x << "].Ls";
 
 		string sPosition	= ssP.str();
-		string sIntensity	= ssI.str();		
+		string sLa			= ssLa.str();
+		string sLd			= ssLd.str();
+		string sLs			= ssLs.str();
 
-		m_pEffect->AssignUniformVec4( sPosition,	 eyeLightPos );
-		AppLog::Ref().OutputGlErrors();	
-		m_pEffect->AssignUniformVec3( sIntensity, lightInt );
-		AppLog::Ref().OutputGlErrors();	
-	}	
-
-	// textures
-	m_pEffect->AssignUniformSampler2D( string("tex"),		m_texBark.TextureId() );	
-	m_pEffect->AssignUniformSampler2D( string("texBump"),	m_texBump.TextureId() );	
+		m_pEffect->AssignUniformVec4( sPosition, vLightPos );
+		m_pEffect->AssignUniformVec3( sLa, la );
+		m_pEffect->AssignUniformVec3( sLd, ld );
+		m_pEffect->AssignUniformVec3( sLs, ls );
+	}		
 
 	// Material
-	m_pEffect->AssignUniformVec3(  string("Ka"),			m_material.Ka() );
-	m_pEffect->AssignUniformVec3(  string("Kd"),			m_material.Kd() );
-	m_pEffect->AssignUniformVec3(  string("Ks"),			m_material.Ks() );
-	m_pEffect->AssignUniformFloat( string("rShininess"),	m_material.Shininess() );	
-	
-	// set the colour for the branch being drawn (for debug purposes)
-	vec4 vColor[2] = { vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0) };
-	m_pEffect->AssignUniformVec4( string("wfColour"),	vColor[nFlipIt] );
-	AppLog::Ref().OutputGlErrors();
+	m_pEffect->AssignUniformVec3(  string("material.Ka"),			m_material.Ka() );
+	m_pEffect->AssignUniformVec3(  string("material.Kd"),			m_material.Kd() );
+	m_pEffect->AssignUniformVec3(  string("material.Ks"),			m_material.Ks() );
+	m_pEffect->AssignUniformFloat( string("material.rShininess"),	m_material.Shininess() );
 
+	// textures
+	if( m_CurrentShader != eTreeShader::WireFrame )
+	{
+		m_pEffect->AssignUniformSampler2D( string("tex"),		m_texBark.TextureId() );
+		m_pEffect->AssignUniformSampler2D( string("texBump"),	m_texBump.TextureId() );
+	}
+	
+	// wireframe branch colour
+	if( m_CurrentShader == eTreeShader::WireFrame )
+	{
+		vec4 vColor[2] = { vec4(1.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0) };
+		m_pEffect->AssignUniformVec4( string("wfColour"),	vColor[nFlipIt] );		
+	}
+
+	switch( m_CurrentShader )
+	{
+	case eTreeShader::Flat:
+		SelectShaderSubroutine( GL_VERTEX_SHADER );
+		break;
+
+	default:
+		SelectShaderSubroutine( GL_FRAGMENT_SHADER );
+		break;
+	};
+	
 	glPolygonMode( GL_FRONT_AND_BACK, ( m_CurrentShader == WireFrame ) ? GL_LINE : GL_FILL );
 	
+	AppLog::Ref().OutputGlErrors();
 	return true;
+}
+void Tree::SelectShaderSubroutine( GLenum shadertype )
+{
+	m_nSunSub		= glGetSubroutineIndex( m_pEffect->Id(), shadertype, "Sunlight" );
+	m_nSpotlightSub = glGetSubroutineIndex( m_pEffect->Id(), shadertype, "Spotlights" );
+
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( shadertype, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( shadertype, 1, &m_nSpotlightSub );
 }
 
 bool Tree::InitializeLSystem()
@@ -602,7 +642,7 @@ HRESULT Tree::Render()
 
 	for_each( m_LTree.begin(), m_LTree.end(),
 		[&]( Generation & gen )
-		{			
+		{
 			for_each( gen.begin(), gen.end(),
 				[&]( Segment* pSeg )
 				{
@@ -611,7 +651,7 @@ HRESULT Tree::Render()
 					nFlipIt	= 1-nFlipIt;
 				}
 			);
-		}		
+		}
 	);
 
 	return S_OK;
