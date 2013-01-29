@@ -16,7 +16,6 @@
 #include "Segment.h"
 #include "LSystem.h"
 #include "Cylinder.h"
-#include "TreeShaderz.h"
 #include "Material.h"
 
 #include "slowglobe-cfg.h"
@@ -36,7 +35,7 @@ static int nFlipIt = 1;
 
 Tree::Tree() :
 	m_bInitialized				( false ),
-	m_CurrentShader				( WireFrame ),
+	m_CurrentShader				( Smooth ),
 	m_pEffect					( NULL ),
 	m_nSunSub					( 0 ),
 	m_nSpotlightSub				( 0 ),
@@ -53,7 +52,7 @@ Tree::Tree( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_bInitialized				( false ),	
 	m_sBarkFile					( sBark ),
 	m_sBumpFile					( sBump ),
-	m_CurrentShader				( WireFrame ),
+	m_CurrentShader				( Smooth ),
 	m_pEffect					( NULL ),
 	m_nSunSub					( 0 ),
 	m_nSpotlightSub				( 0 ),
@@ -134,7 +133,7 @@ bool Tree::Initialize()
 		return false;
 	}
 
-	if( ! GetShader( WireFrame ) )
+	if( ! GetShader( m_CurrentShader ) )
 	{
 		Uninitialize();
 		AppLog::Ref().LogMsg("%s failed to initialize shaders for the tree", __FUNCTION__);

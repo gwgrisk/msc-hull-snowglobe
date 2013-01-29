@@ -36,13 +36,12 @@ private:
 	std::string						m_sBarkFile;
 	std::string						m_sBumpFile;
 	
-	eTreeShader						m_CurrentShader;	
+	eTreeShader						m_CurrentShader;
 	Effect*							m_pEffect;		// currently selected effect
-	GLuint							m_nSunSub;
-	GLuint							m_nSpotlightSub;
 	Vbo<CustomVertex> *				m_pVbo;			// vertex data
 	GLuint							m_nVaoId;
-	
+	GLuint							m_nSunSub;
+	GLuint							m_nSpotlightSub;	
 	
 	LTree							m_LTree;
 	LSystem							m_LSystem;	
