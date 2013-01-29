@@ -325,7 +325,6 @@ bool Tree::InitializeVao()
 	return true;
 }
 	
-
 bool Tree::GetShader( const eTreeShader e )
 {
 	using std::string;

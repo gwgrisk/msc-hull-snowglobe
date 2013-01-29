@@ -1,5 +1,5 @@
 
-#version 410
+#version 400
 
 subroutine vec4 FragmentLightIntensity();
 subroutine uniform FragmentLightIntensity LightIntensity;

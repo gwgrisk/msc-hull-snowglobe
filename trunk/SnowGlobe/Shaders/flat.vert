@@ -24,7 +24,7 @@ struct MaterialInfo
 // attributes
 in vec3 VertexPosition;
 in vec3 VertexNormal;
-in vec3 VertexColour;
+in vec4 VertexColour;
 
 // uniforms
 uniform vec3			vViewPosition;	// camera position (view space)
@@ -36,7 +36,7 @@ uniform mat4			mMVP;
 
 // output to the next stage in the pipeline
 flat out vec4 vLightIntensity;
-
+out vec4 VertColour;
 
 // locals (saves passing them around as args!)
 vec3 vViewDirection;
@@ -108,6 +108,7 @@ void main()
 
 	// compute the (flat) vLightIntensity for this vertex
 	vLightIntensity = LightIntensity();
+	VertColour = VertexColour;
 
 	gl_Position = mMVP * vec4(VertexPosition, 1.0);
 }

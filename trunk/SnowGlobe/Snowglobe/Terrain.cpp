@@ -26,7 +26,8 @@
 
 #include <fstream>
 #include "InputMgr.h"
-
+#include "EffectMgr.h"
+#include "Effect.h"
 
 Terrain::Terrain() :
 	IGraphNode			( NULL, NULL, std::string("terrain") ),
@@ -37,7 +38,7 @@ Terrain::Terrain() :
 	m_rCellWidth		( 0.0f ),
 	m_rCellHeight		( 0.0f ),
 	m_rCellDepth		( 0.0f ),
-	m_pShaderProgram	( NULL ),
+	m_pEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_bOldShader		( false )
@@ -62,7 +63,7 @@ Terrain::Terrain(
 	m_rCellWidth		( rCellWidth ),
 	m_rCellHeight		( rCellHeight ),
 	m_rCellDepth		( rCellDepth ),
-	m_pShaderProgram	( NULL ),
+	m_pEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_bOldShader		( false )
@@ -94,7 +95,7 @@ Terrain::Terrain(
 	m_rCellWidth		( rCellWidth ),
 	m_rCellHeight		( rCellHeight ),
 	m_rCellDepth		( rCellDepth ),
-	m_pShaderProgram	( NULL ),
+	m_pEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_bOldShader		( false )
@@ -113,7 +114,7 @@ Terrain::Terrain( const Terrain & rhs ) :
 	m_sHeightField		( rhs.m_sHeightField ),
 	m_sTexture			( rhs.m_sTexture ),
 	m_sAlphaMap			( rhs.m_sAlphaMap ),
-	m_pShaderProgram	( NULL ),
+	m_pEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_bOldShader		( rhs.m_bOldShader )
@@ -165,12 +166,7 @@ Terrain::~Terrain()
 }
 
 bool Terrain::Initialize()
-{
-	// Create an xz plane (geometric object that defines the terrain)
-	// Apply texture
-	// Amend plane UV co-ords in order to accomodate texture mapping requirements
-	// Apply heightfield to terrain geometry
-
+{	
 	using namespace AntiMatter;
 	using namespace std;
 	using glm::vec3;
@@ -183,30 +179,148 @@ bool Terrain::Initialize()
 		(fabs(m_rCellWidth) == 0.0f) || (fabs(m_rCellHeight) == 0.0f) || (fabs(m_rCellDepth) == 0.0f) )
 			return false;	
 
+	
+	InitializeMtl();	
+
+	if( ! InitializeTextures() )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to load textures", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeGeometry() )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s initialize geometry failed for cylinder", __FUNCTION__ );
+		return false;
+	}	
+
+	if( ! GetShader() )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize shaders for the tree", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVbo(m_Plane) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize vbo", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVao() )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize vao", __FUNCTION__);
+		return false;		
+	}	
+	
+	m_bInitialized = true;
+
+	return m_bInitialized;
+}
+bool Terrain::InitializeMtl()
+{
+	using glm::vec3;
+
 	// material
 	m_material.Ka(vec3(0.0, 0.0, 0.0));
 	m_material.Kd(vec3(0.2, 1.0, 0.2));
 	m_material.Ks(vec3(0.0, 0.1, 0.0));
 	m_material.Shininess( 1.0f );
 
+	return true;
+}
+bool Terrain::InitializeGeometry()
+{
+	using AntiMatter::AppLog;	
 
-	// geometry
 	m_Plane = Plane(m_nVertCols, m_nVertRows, m_rCellWidth, m_rCellHeight, m_rCellDepth);
+	ApplyHeightField();
+
 	if( ! m_Plane.Initialized() )
 	{
-		AppLog::Ref().LogMsg("Terrain::Initialize() failed: Plane::Initialize() failed.");
+		AppLog::Ref().LogMsg("%s failed.", __FUNCTION__ );
 		return false;
 	}
 
-	ApplyTexture();
-	ApplyAlphaMap();
-	ApplyHeightField();
-	CreateShader();
+	return true;
+}
+bool Terrain::InitializeTextures()
+{
+	using AntiMatter::Shell::FileExists;
 
-	if( m_pShaderProgram )
-		m_bInitialized = m_pShaderProgram->Initialized();
+	// load texture
+	if( FileExists( m_sTexture ) )
+		m_texGrass = Texture( m_sTexture.c_str(), false );
+
+	// load alpha map
+	if( FileExists( m_sAlphaMap ) )
+		m_texAlphaMap = Texture( m_sAlphaMap );
+
+	return (m_texGrass.Initialized() && m_texAlphaMap.Initialized());
+}
+bool Terrain::InitializeVbo( IGeometry & geometry )
+{
+	using AntiMatter::AppLog;
+
+	m_pVbo = new Vbo<CustomVertex> ( 
+		geometry.VertCount(), 
+		geometry.Vertices(), 
+		geometry.IndexCount(), 
+		geometry.Indices() 
+	);
+
+	if( ! m_pVbo->Initialized() )
+	{
+		AppLog::Ref().LogMsg( "%s failed to initialize vertex buffer for object geometry", __FUNCTION__ );
+		return false;
+	}
+
+	return true;
+}
+bool Terrain::InitializeVao()
+{
+	using AntiMatter::AppLog;
+
+	glUseProgram( m_pEffect->Id() );
+
+	glGenVertexArrays( 1, &m_nVaoId );
+	glBindVertexArray( m_nVaoId );	
+
+	glBindBuffer( GL_ARRAY_BUFFER,			m_pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	m_pVbo->IndexId() );
 	
-	return m_bInitialized;
+	// set the VBO attribute pointers
+	GLuint i = 0;
+	
+	for( auto n = m_pEffect->Attributes().begin(); n != m_pEffect->Attributes().end(); n ++ )
+	{	
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer( 
+			i, 
+			n->nFieldSize,
+			GL_FLOAT,
+			GL_FALSE,
+			n->nStride,
+			(GLfloat *) NULL + n->nFieldOffset
+		);
+		
+		i ++;
+	}
+	
+	glBindVertexArray(0);
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	glBindTexture( GL_TEXTURE0, 0 );
+	glBindTexture( GL_TEXTURE1, 0 );
+	
+
+	glUseProgram(0);
+
+	return true;
 }
 void Terrain::Uninitialize()
 {	
@@ -223,28 +337,8 @@ void Terrain::Uninitialize()
 
 	if( m_Plane.Initialized() )
 		m_Plane.Uninitialize();	
-
-	if( m_pShaderProgram )
-	{
-		if( m_pShaderProgram->Initialized() )
-			m_pShaderProgram->Uninitialize();
-
-		delete m_pShaderProgram;
-		m_pShaderProgram = NULL;
-	}	
 }
 
-void Terrain::ApplyTexture()
-{
-	if( AntiMatter::Shell::FileExists( m_sTexture ) )
-		m_texGrass = Texture( m_sTexture.c_str(), false );
-
-	// we want the texture to repeat, so we'll need to ensure that if the texture is smaller than the 
-	// geometry, that the UV coords tile the texture and don't just stretch it to the four corners 
-
-	// UV coords are part of the Plane object's CustomVertex array
-	
-}
 void Terrain::ApplyHeightField()
 {	
 	// for each vertex..
@@ -279,72 +373,27 @@ void Terrain::ApplyHeightField()
 		// m_Plane.RecalcNormalMap();
 	}		
 }
-void Terrain::ApplyAlphaMap()
-{
-	using namespace AntiMatter;
 
-	if( Shell::FileExists( m_sAlphaMap ) )
-		m_texAlphaMap = Texture( m_sAlphaMap );
-}
 	
-bool Terrain::CreateShader()
+bool Terrain::GetShader()
 {
-	using namespace std;
-	using namespace AntiMatter;
+	using std::string;
 
-	// Create a ShaderProgram object and initialize it for the terrain object
-	// This is a candidate for a factory object / scripting
-	vector<ShaderDesc>				vDescs;
-	vector<ShaderInputAttribute>	vArgs;
-	ShaderDesc						VertShaderDesc;
-	ShaderDesc						PixShaderDesc;
-	ShaderInputAttribute			VertPosArg;
-	ShaderInputAttribute			VertTextureArg;
-	ShaderInputAttribute			VertNormalArg;
-	ShaderInputAttribute			VertColorArg;	
-	
-	VertShaderDesc.sFileName	= g_Cfg.ShadersDir() + string("textured-phong.vert");
-	PixShaderDesc.sFileName		= g_Cfg.ShadersDir() + string("textured-phong-alphamap.frag");
-
-	VertShaderDesc.nType		= Vertex;
-	PixShaderDesc.nType			= Fragment;
-
-	VertPosArg.sFieldName		= string("VertexPosition");
-	VertPosArg.nFieldSize		= 3;	// not bytes, num of components
-	VertPosArg.nFieldOffset		= 0;
-	VertPosArg.nStride			= sizeof(CustomVertex);
-
-	VertNormalArg.sFieldName	= string("VertexNormal");
-	VertNormalArg.nFieldSize	= 3;
-	VertNormalArg.nFieldOffset	= 3;
-	VertNormalArg.nStride		= sizeof(CustomVertex);	
-
-	VertTextureArg.sFieldName	= string("VertexTexCoord");
-	VertTextureArg.nFieldSize	= 2;
-	VertTextureArg.nFieldOffset	= 6;
-	VertTextureArg.nStride		= sizeof(CustomVertex);
-
-	vDescs.push_back ( VertShaderDesc );
-	vDescs.push_back ( PixShaderDesc );
-
-	vArgs.push_back ( VertPosArg );	
-	vArgs.push_back ( VertNormalArg );	
-	vArgs.push_back ( VertTextureArg );
-
-	m_pShaderProgram = new ShaderProgram( m_Plane.Vertices(), m_Plane.Indices(), m_Plane.VertCount(), m_Plane.IndexCount(), vDescs, vArgs );
-	if( m_pShaderProgram->Initialized() )
+	// warning C4482: nonstandard extension used: enum 'Effect::EffectBuildState' used in qualified name
+#pragma warning (push)
+#pragma warning (disable: 4482)
+	if( EffectMgr::Ref().Find( string("textured-phong-alphamap"), &m_pEffect ) )
 	{
-		m_nSunSub		= glGetSubroutineIndex( m_pShaderProgram->ShaderProgId(), GL_FRAGMENT_SHADER, "Sunlight" );
-		m_nSpotlightSub = glGetSubroutineIndex( m_pShaderProgram->ShaderProgId(), GL_FRAGMENT_SHADER, "Spotlights" );
+		if( m_pEffect->BuildState() == Effect::EffectBuildState::Linked )					
+		{
+			m_nSunSub		= glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Sunlight" );
+			m_nSpotlightSub = glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
+			return true;		
+		}
 	}
-	else	
-	{
-		delete m_pShaderProgram;
-		m_pShaderProgram = NULL;
-		return false;
-	}
+#pragma warning (pop)
 
-	return true;
+	return false;
 }
 void Terrain::SetShaderArgs()
 {
@@ -353,10 +402,10 @@ void Terrain::SetShaderArgs()
 	using namespace std;
 
 	// I only put these into variables for debug purposes
-	GLuint nShaderProgId	= m_pShaderProgram->ShaderProgId();
-	GLuint nVaoId			= m_pShaderProgram->VaoId();
-	GLuint nVboId			= m_pShaderProgram->VboId();
-	GLuint nVboIndexId		= m_pShaderProgram->VboIndexId();
+	GLuint nShaderProgId	= m_pEffect->Id();
+	GLuint nVaoId			= m_nVaoId;
+	GLuint nVboId			= m_pVbo->Id();
+	GLuint nVboIndexId		= m_pVbo->IndexId();
 	GLuint nTexId			= m_texGrass.TextureId();
 	GLuint nAlphaId			= m_texAlphaMap.TextureId();
 
@@ -379,7 +428,7 @@ void Terrain::SetShaderArgs()
 	// vViewPosition (camera position transformed into view space)
 	// vec3 vCamPos = vec3(Graph()->Cam().V() * m_Data.W() * vec4( Graph()->Cam().Pos(), 1.0));
 	vec3 vCamPos = vec3(Graph()->Cam().V() * vec4( Graph()->Cam().Pos(), 1.0));
-	m_pShaderProgram->AssignUniformVec3( string("vViewPosition"), vCamPos );
+	m_pEffect->AssignUniformVec3( string("vViewPosition"), vCamPos );
 
 	// lights - light[0-3] = spotlights, light[4] = sun
 	vector<Light*> lights = this->Graph()->Lights().Lights();
@@ -402,23 +451,23 @@ void Terrain::SetShaderArgs()
 		string sLd			= ssLd.str();
 		string sLs			= ssLs.str();
 
-		m_pShaderProgram->AssignUniformVec4( sPosition,	 vLightPos );
-		m_pShaderProgram->AssignUniformVec3( sLa, la );
-		m_pShaderProgram->AssignUniformVec3( sLd, ld );
-		m_pShaderProgram->AssignUniformVec3( sLs, ls );
+		m_pEffect->AssignUniformVec4( sPosition,	 vLightPos );
+		m_pEffect->AssignUniformVec3( sLa, la );
+		m_pEffect->AssignUniformVec3( sLd, ld );
+		m_pEffect->AssignUniformVec3( sLs, ls );
 	}
 	AppLog::Ref().OutputGlErrors();
 
 	// material data
-	m_pShaderProgram->AssignUniformVec3(  string("material.Ka"),			m_material.Ka() );
-	m_pShaderProgram->AssignUniformVec3(  string("material.Kd"),			m_material.Kd() );
-	m_pShaderProgram->AssignUniformVec3(  string("material.Ks"),			m_material.Ks() );
-	m_pShaderProgram->AssignUniformFloat( string("material.rShininess"),	m_material.Shininess() );
+	m_pEffect->AssignUniformVec3(  string("material.Ka"),			m_material.Ka() );
+	m_pEffect->AssignUniformVec3(  string("material.Kd"),			m_material.Kd() );
+	m_pEffect->AssignUniformVec3(  string("material.Ks"),			m_material.Ks() );
+	m_pEffect->AssignUniformFloat( string("material.rShininess"),	m_material.Shininess() );
 	AppLog::Ref().OutputGlErrors();
 
 	// textures
-	m_pShaderProgram->AssignUniformSampler2D( string("tex"),			nTexId );
-	m_pShaderProgram->AssignUniformSampler2D( string("texAlpha"),		nAlphaId );
+	m_pEffect->AssignUniformSampler2D( string("tex"),			nTexId );
+	m_pEffect->AssignUniformSampler2D( string("texAlpha"),		nAlphaId );
 	AppLog::Ref().OutputGlErrors();
 	
 	// matrices
@@ -429,9 +478,9 @@ void Terrain::SetShaderArgs()
 	glm::mat3 mNormal(mModelView);
 	mNormal = glm::transpose(mNormal._inverse());
 
-	m_pShaderProgram->AssignUniformMat4( string("mModelView"),	mModelView );
-	m_pShaderProgram->AssignUniformMat3( string("mNormal"),		mNormal );
-	m_pShaderProgram->AssignUniformMat4( string("mMVP"),		m_Data.MVP() );
+	m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
+	m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+	m_pEffect->AssignUniformMat4( string("mMVP"),			m_Data.MVP() );
 	AppLog::Ref().OutputGlErrors();
 }
 
@@ -477,7 +526,7 @@ HRESULT Terrain::Update( const float & rSecsDelta )
 }
 HRESULT Terrain::PreRender()
 {
-	if( ! m_pShaderProgram )
+	if( ! m_pEffect )
 		return E_POINTER;
 
 	SetShaderArgs();
@@ -490,7 +539,7 @@ HRESULT Terrain::PreRender()
 }
 HRESULT Terrain::Render()
 {
-	if( ! m_pShaderProgram )
+	if( ! m_pEffect )
 		return E_POINTER;
 
 	glDrawElements( GL_TRIANGLES, m_Plane.IndexCount(), GL_UNSIGNED_SHORT, ((char*)NULL) );
@@ -501,7 +550,7 @@ HRESULT Terrain::PostRender()
 {
 	using AntiMatter::AppLog;
 
-	if( ! m_pShaderProgram )
+	if( ! m_pEffect )
 		return E_POINTER;
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

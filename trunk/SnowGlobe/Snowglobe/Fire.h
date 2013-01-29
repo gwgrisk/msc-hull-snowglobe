@@ -13,7 +13,6 @@
 #include <string>
 #include <fstream>
 
-class ShaderProgram;
 class SceneGraph;
 
 class Fire :	public IGraphNode,
