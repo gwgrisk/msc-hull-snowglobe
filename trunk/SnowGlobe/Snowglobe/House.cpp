@@ -12,7 +12,8 @@
 #include "ShaderTypes.h"
 #include "ShaderDesc.h"
 #include "ShaderInputAttribute.h"
-#include "ShaderProgram.h"
+#include "EffectMgr.h"
+#include "Effect.h"
 
 #include <iomanip>
 #include <fstream>
@@ -30,28 +31,30 @@
 House::House() : 
 	IGraphNode			( NULL, NULL, std::string("house") ),
 	m_bInitialized		( false ),
-	m_pQuadShader		( NULL ),
-	m_pTriShader		( NULL ),
+	_pQuadEffect		( NULL ),
+	_pTriEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 )
 {
+	glex::Load();
 }
 House::House( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId, const std::string & sConfigFile ) :
 	IGraphNode			( pGraph, pParent, sId ),
 	m_bInitialized		( false ),
-	m_pQuadShader		( NULL ),
-	m_pTriShader		( NULL ),
+	_pQuadEffect		( NULL ),
+	_pTriEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_sConfigFile		( sConfigFile )
 {
+	glex::Load();
 	m_bInitialized = Initialize();
 }
 House::House( const House & rhs ) : 
 	IGraphNode			( rhs.m_pGraph, rhs.m_pParent, rhs.m_sId ),
 	m_bInitialized		( false ),
-	m_pQuadShader		( NULL ),
-	m_pTriShader		( NULL ),
+	_pQuadEffect		( NULL ),
+	_pTriEffect			( NULL ),
 	m_nSunSub			( 0 ),
 	m_nSpotlightSub		( 0 ),
 	m_sConfigFile		( rhs.m_sConfigFile )
@@ -89,8 +92,6 @@ bool House::Initialize()
 	if( m_bInitialized )
 		return true;
 
-	glex::Load();
-
 	using AntiMatter::AppLog;
 	using AntiMatter::Shell::FileExists;
 	using namespace std;
@@ -99,22 +100,53 @@ bool House::Initialize()
 	m_Quad	= Quad( 2.0f, 1.2f );
 	m_Tri	= Tri( 1.2f, 0.8f );
 
-	bool bSuccess = false;
-
-	bSuccess = CreateShader( &m_pQuadShader, m_Quad );
-	if (! bSuccess )
+	if( ! InitializeGeometry() )
 	{
-		AppLog::Ref().LogMsg("%s failed to load shader for quad geometry", __FUNCTION__ );
 		Uninitialize();
+		AppLog::Ref().LogMsg("%s initialize geometry failed for cylinder", __FUNCTION__ );
+		return false;
+	}	
+
+	if( ! GetShader(&_pQuadEffect) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize quad shader", __FUNCTION__);
 		return false;
 	}
 
-	bSuccess = CreateShader( &m_pTriShader, m_Tri );
-	if( ! bSuccess )
+	if( ! GetShader(&_pTriEffect) )
 	{
-		AppLog::Ref().LogMsg("%s failed to load shader for quad geometry", __FUNCTION__ );
 		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize tri shader", __FUNCTION__);
 		return false;
+	}
+
+	if( ! InitializeVbo(&_pQuadVbo, m_Quad) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize quad vbo", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVbo(&_pTriVbo, m_Tri) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize tri vbo", __FUNCTION__);
+		return false;
+	}
+
+	if( ! InitializeVao( _pQuadEffect, _nQuadVao, _pQuadVbo ) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize quad vao", __FUNCTION__);
+		return false;		
+	}
+
+	if( ! InitializeVao( _pTriEffect, _nTriVao, _pTriVbo ) )
+	{
+		Uninitialize();
+		AppLog::Ref().LogMsg("%s failed to initialize tri vao", __FUNCTION__);
+		return false;		
 	}
 
 	// attempt to load data from config file
@@ -154,14 +186,24 @@ bool House::Initialize()
 	return m_bInitialized;
 }
 void House::Uninitialize()
-{	
-	m_bInitialized	= false;
+{
+	if( ! m_bInitialized )
+		return;
 
-	m_sAssetFiles.clear();
-	m_sConfigFile	= "";
+	m_bInitialized	= false;	
 
-	ZeroMemory(&m_matWall, sizeof(Material));
-	ZeroMemory(&m_matRoof, sizeof(Material));	
+	// no longer need the effect ptrs	
+	_pQuadEffect	= NULL;
+	_pTriEffect		= NULL;	
+
+	// delete vertex arrays
+	if( _nQuadVao )
+		glDeleteVertexArrays( 1, &_nQuadVao );
+
+	if( _nTriVao )
+		glDeleteVertexArrays( 1, &_nTriVao );
+
+	_nQuadVao = _nTriVao = 0;
 
 	// delete textures
 	for( unsigned int n = 0; n < m_Textures.size(); n ++ )
@@ -171,17 +213,12 @@ void House::Uninitialize()
 	}
 	m_Textures.clear();
 
-	// delete shaders
-	if( m_pQuadShader )
-	{
-		delete m_pQuadShader;
-		m_pQuadShader = NULL;
-	}
-	if( m_pTriShader )
-	{
-		delete m_pTriShader;
-		m_pTriShader = NULL;
-	}		
+	// remaining assets
+	m_sAssetFiles.clear();
+	m_sConfigFile	= "";
+
+	ZeroMemory( &m_matWall, sizeof(Material) );
+	ZeroMemory( &m_matRoof, sizeof(Material) );		
 }
 
 void House::TransformGeometry()
@@ -276,154 +313,175 @@ void House::TransformGeometry()
 }
 
 // Shader
-bool House::CreateShader( ShaderProgram** ppShader, IGeometry & pShape )
+bool House::InitializeGeometry()
+{	
+	m_Quad	= Quad( 2.0f, 1.2f );
+	m_Tri	= Tri( 1.2f, 0.8f );
+	return true;
+}
+bool House::InitializeVbo( Vbo<CustomVertex> **ppVbo, IGeometry & geometry )
 {
-	if( ! ppShader )
-		return false;
-	
-	using namespace std;
-	using namespace AntiMatter;
-	
-	vector<ShaderDesc>				vDescs;
-	vector<ShaderInputAttribute>	vArgs;
+	using AntiMatter::AppLog;
 
-	ShaderDesc						VertShaderDesc;
-	ShaderDesc						PixShaderDesc;
-
-	ShaderInputAttribute			VertPosArg;	
-	ShaderInputAttribute			VertNormalArg;
-	ShaderInputAttribute			VertTextureArg;
-
-
-	VertShaderDesc.sFileName	= g_Cfg.ShadersDir() + string("textured-phong.vert");
-	PixShaderDesc.sFileName		= g_Cfg.ShadersDir() + string("textured-phong.frag");
-
-	VertShaderDesc.nType		= Vertex;
-	PixShaderDesc.nType			= Fragment;
-
-	VertPosArg.sFieldName		= string("VertexPosition");
-	VertPosArg.nFieldSize		= 3;	// not bytes, num of components	VertPosArg.nFieldOffset		= 0;
-	VertPosArg.nFieldOffset		= 0;
-	VertPosArg.nStride			= sizeof(CustomVertex);
-
-	VertNormalArg.sFieldName	= string("VertexNormal");
-	VertNormalArg.nFieldSize	= 3;
-	VertNormalArg.nFieldOffset	= 3;
-	VertNormalArg.nStride		= sizeof(CustomVertex);	
-
-	VertTextureArg.sFieldName	= string("VertexTexCoord");
-	VertTextureArg.nFieldSize	= 2;
-	VertTextureArg.nFieldOffset	= 6;
-	VertTextureArg.nStride		= sizeof(CustomVertex);
-
-	vDescs.push_back ( VertShaderDesc );
-	vDescs.push_back ( PixShaderDesc );
-
-	vArgs.push_back ( VertPosArg );	
-	vArgs.push_back ( VertNormalArg );	
-	vArgs.push_back ( VertTextureArg );
-
-	*ppShader = new ShaderProgram( 
-		pShape.Vertices(), 
-		pShape.Indices(), 
-		pShape.VertCount(), 
-		pShape.IndexCount(), 
-		vDescs, 
-		vArgs 
+	(*ppVbo) = new Vbo<CustomVertex> ( 
+		geometry.VertCount(), 
+		geometry.Vertices(), 
+		geometry.IndexCount(), 
+		geometry.Indices() 
 	);
 
-	if( (*ppShader)->Initialized() )
+	if( ! (*ppVbo)->Initialized() )
 	{
-		m_nSunSub		= glGetSubroutineIndex( (*ppShader)->ShaderProgId(), GL_FRAGMENT_SHADER, "Sunlight" );
-		m_nSpotlightSub = glGetSubroutineIndex( (*ppShader)->ShaderProgId(), GL_FRAGMENT_SHADER, "Spotlights" );
-	}
-	else
-	{
-		delete *ppShader;
-		*ppShader = NULL;
+		AppLog::Ref().LogMsg( "%s failed to initialize vertex buffer for object geometry", __FUNCTION__ );
 		return false;
 	}
 
 	return true;
 }
-void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBump, const Material & mat )
+bool House::InitializeVao( Effect* pEffect, GLuint & nVaoId, Vbo<CustomVertex>* pVbo )
+{
+	using AntiMatter::AppLog;
+
+	glUseProgram( pEffect->Id() );
+
+	glGenVertexArrays( 1, &nVaoId );
+	glBindVertexArray( nVaoId );	
+
+	glBindBuffer( GL_ARRAY_BUFFER,			pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	pVbo->IndexId() );
+	
+	// set the VBO attribute pointers
+	GLuint i = 0;
+	
+	for( auto n = pEffect->Attributes().begin(); n != pEffect->Attributes().end(); ++ n )
+	{	
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer( 
+			i, 
+			n->nFieldSize,
+			GL_FLOAT,
+			GL_FALSE,
+			n->nStride,
+			(GLfloat *) NULL + n->nFieldOffset
+		);
+		
+		i ++;
+	}
+	
+	glBindVertexArray(0);
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	glBindTexture( GL_TEXTURE0, 0 );
+	glBindTexture( GL_TEXTURE1, 0 );
+	
+
+	glUseProgram(0);
+
+	return true;
+}
+
+bool House::GetShader( Effect** ppEffect )
+{
+	using std::string;
+
+	bool bRet = false;
+
+	// warning C4482: nonstandard extension used: enum 'Effect::EffectBuildState' used in qualified name
+#pragma warning (push)
+#pragma warning (disable: 4482)
+	if( EffectMgr::Ref().Find( string("textured-phong"), ppEffect ) )
+	{
+		if( (*ppEffect)->BuildState() == Effect::EffectBuildState::Linked )
+		{
+			m_nSunSub		= glGetSubroutineIndex( (*ppEffect)->Id(), GL_FRAGMENT_SHADER, "Sunlight" );
+			m_nSpotlightSub = glGetSubroutineIndex( (*ppEffect)->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
+			bRet			= true;
+		}
+	}
+#pragma warning (pop)
+
+	return bRet;
+}
+bool House::SetShaderArgs( Effect* pEffect, const GLuint nVaoId, const Vbo<CustomVertex>* pVbo, const Texture* pTex, const Texture* pBump, const Material & mtl )
 {
 	using namespace glm;
-	using namespace AntiMatter;
 	using namespace std;
+	using namespace AntiMatter;
 
-	// I only put these into variables for debug purposes
-	GLuint nShaderProgId	= pShader->ShaderProgId();
-	GLuint nVaoId			= pShader->VaoId();
-	GLuint nVboId			= pShader->VboId();
-	GLuint nVboIndexId		= pShader->VboIndexId();
-	GLuint nTexId			= pTex->TextureId();
-	GLuint nBumpId			= pBump->TextureId();
-
-	// Indicate which ShaderProgram to use	
-	glUseProgram( nShaderProgId );
-	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
-		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
-	else
-		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotlightSub );
+	if( ! pEffect )
+		return false;
+	
+	// Select Shader
+	glUseProgram( pEffect->Id() );	
 
 	// bind buffers
-	glBindVertexArray( nVaoId );							// vertex array object
-	glBindBuffer( GL_ARRAY_BUFFER,			nVboId );		// vertices
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	nVboIndexId );	// indices	
+	glBindVertexArray( nVaoId );
+	glBindBuffer( GL_ARRAY_BUFFER,			pVbo->Id() );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	pVbo->IndexId() );
+	
+	// Assign uniform variables
 
-		
-	// -- Assign uniform variables ------
-
-	// vViewPosition (camera position transformed into view space)
+	// camera position (transformed to view space)
 	vec3 vCamPos = vec3(Graph()->Cam().V() * vec4( Graph()->Cam().Pos(), 1.0));
-	pShader->AssignUniformVec3( string("vViewPosition"), vCamPos );
-
+	pEffect->AssignUniformVec3( string("vViewPosition"), vCamPos );
 
 	// lights - light[0-3] = spotlights, light[4] = sun
-	vector<Light*> lights = this->Graph()->Lights().Lights();
+	const vector<Light*> & lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		glm::vec4 vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
-		glm::vec3 la		= lights[x]->La();
-		glm::vec3 ld		= lights[x]->Ld();
-		glm::vec3 ls		= lights[x]->Ls();		
+		// light position (transformed to view space)
+		glm::vec4	vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
+		glm::vec3	la			= lights[x]->La();
+		glm::vec3	ld			= lights[x]->Ld();
+		glm::vec3	ls			= lights[x]->Ls();
+		glm::vec3	vDir		= lights[x]->Direction();
+		float		rExp		= lights[x]->Exponent();
+		float		rCutOff		= lights[x]->CutOff();
 
-		stringstream ssP, ssLa, ssLd, ssLs;			
-			
+		stringstream ssP, ssLa, ssLd, ssLs, ssD, ssE, ssC;
 		ssP  << "lights[" << x << "].Position";
 		ssLa << "lights[" << x << "].La";
 		ssLd << "lights[" << x << "].Ld";
 		ssLs << "lights[" << x << "].Ls";
+		ssD  << "lights[" << x << "].vDirection";
+		ssE  << "lights[" << x << "].rExponent";
+		ssC  << "lights[" << x << "].rCutOff";
 
 		string sPosition	= ssP.str();
 		string sLa			= ssLa.str();
 		string sLd			= ssLd.str();
 		string sLs			= ssLs.str();
+		string sDir			= ssD.str();
+		string sExp			= ssE.str();
+		string sCut			= ssC.str();
 
-		pShader->AssignUniformVec4( sPosition,	 vLightPos );
-		pShader->AssignUniformVec3( sLa, la );
-		pShader->AssignUniformVec3( sLd, ld );
-		pShader->AssignUniformVec3( sLs, ls );
+		pEffect->AssignUniformVec4( sPosition, vLightPos );
+		pEffect->AssignUniformVec3( sLa, la );
+		pEffect->AssignUniformVec3( sLd, ld );
+		pEffect->AssignUniformVec3( sLs, ls );
+		pEffect->AssignUniformVec3( sDir, vDir );
+		pEffect->AssignUniformFloat( sExp, rExp );
+		pEffect->AssignUniformFloat( sCut, rCutOff );
 	}
-	AppLog::Ref().OutputGlErrors();
 
+	// Select light subroutine
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotlightSub );
 
 	// Material
-	pShader->AssignUniformVec3(  string("material.Ka"),			mat.Ka() );
-	pShader->AssignUniformVec3(  string("material.Kd"),			mat.Kd() );
-	pShader->AssignUniformVec3(  string("material.Ks"),			mat.Ks() );
-	pShader->AssignUniformFloat( string("material.rShininess"),	mat.Shininess() );		
-	AppLog::Ref().OutputGlErrors();	
+	pEffect->AssignUniformVec3(  string("material.Ka"),			mtl.Ka() );
+	pEffect->AssignUniformVec3(  string("material.Kd"),			mtl.Kd() );
+	pEffect->AssignUniformVec3(  string("material.Ks"),			mtl.Ks() );
+	pEffect->AssignUniformFloat( string("material.rShininess"),	mtl.Shininess() );
 
-	
 	// textures	
-	pShader->AssignUniformSampler2D( string("tex"),		nTexId );		
-	pShader->AssignUniformSampler2D( string("texBump"),	nBumpId );
-	AppLog::Ref().OutputGlErrors();	
+	pEffect->AssignUniformSampler2D( string("tex"),		pTex->TextureId() );
+	pEffect->AssignUniformSampler2D( string("texBump"),	pBump->TextureId() );	
 
-
-	// matrices
+	// matrices (these args are set per-primitive in the DrawPrimitive calls)
+	/*
 	glm::mat4 mView			= this->Graph()->Cam().V();
 	glm::mat4 mModel		= m_Data.W();
 	glm::mat4 mModelView	= mView * mModel;
@@ -431,10 +489,14 @@ void House::SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBum
 	glm::mat3 mNormal(mModelView);
 	mNormal = glm::transpose(mNormal._inverse());
 
-	pShader->AssignUniformMat4( string("mModelView"),	mModelView );
-	pShader->AssignUniformMat3( string("mNormal"),		mNormal );
-	pShader->AssignUniformMat4( string("mMVP"),			m_Data.MVP() );
+	pEffect->AssignUniformMat4( string("mModelView"),	mModelView );
+	pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+	pEffect->AssignUniformMat4( string("mMVP"),			m_Data.MVP() );
+	*/
+
 	AppLog::Ref().OutputGlErrors();
+
+	return true;
 }
 
 // IGraphNode
@@ -467,31 +529,31 @@ HRESULT House::Render()
 	// 2. Draw is called frequently.  The fewer loop calculations the better
 
 	// draw the walls
-	SetShaderArgs( m_pQuadShader, m_Textures[WallTexture], m_Textures[WallBump], m_matWall );
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[FrontWall], m_Textures[WallTexture], m_Textures[WallBump] );
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[RightWall], m_Textures[WallTexture], m_Textures[WallBump] );
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[BackWall],  m_Textures[WallTexture], m_Textures[WallBump] );
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[LeftWall],  m_Textures[WallTexture], m_Textures[WallBump] );
+	SetShaderArgs( _pQuadEffect, _nQuadVao, _pQuadVbo, m_Textures[WallTexture], m_Textures[WallBump], m_matWall );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[FrontWall] );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[RightWall] );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[BackWall] );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[LeftWall] );
 
 	// Release buffers set in SetShaderArgs()
 	glBindTexture( GL_TEXTURE_2D,			0 );
 	glBindBuffer( GL_ARRAY_BUFFER,			0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER,	0 );
 	glBindVertexArray(0);
-	glUseProgram(0);	
+	glUseProgram(0);
 
 	// draw the roof
-	SetShaderArgs( m_pQuadShader, m_Textures[RoofTexture], m_Textures[RoofBump], m_matRoof );
+	SetShaderArgs( _pQuadEffect, _nQuadVao, _pQuadVbo, m_Textures[RoofTexture], m_Textures[RoofBump], m_matRoof );
 	
 	// slopes
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[FrontRoofSlope], m_Textures[RoofTexture], m_Textures[RoofBump] );
-	DrawPrimitive( m_pQuadShader, &m_Quad, m_mW[BackRoofSlope], m_Textures[RoofTexture], m_Textures[RoofBump] );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[FrontRoofSlope] );
+	DrawPrimitive( _pQuadEffect, &m_Quad, m_mW[BackRoofSlope] );
 
 	// sides
 	// for some reason, I always got right angled triangles with these things.
 	// not sure why.  will come back to after bump mapping
-	DrawPrimitive( m_pTriShader, &m_Tri, m_mW[RightRoofSide], m_Textures[RoofTexture], m_Textures[RoofBump] );
-	DrawPrimitive( m_pTriShader, &m_Tri, m_mW[LeftRoofSide], m_Textures[RoofTexture], m_Textures[RoofBump] );
+	DrawPrimitive( _pTriEffect, &m_Tri, m_mW[RightRoofSide] );
+	DrawPrimitive( _pTriEffect, &m_Tri, m_mW[LeftRoofSide] );
 
 	return S_OK;
 }
@@ -518,11 +580,8 @@ HRESULT House::DrawItem()
 	return S_OK;
 }
 	
-HRESULT House::DrawPrimitive( ShaderProgram* pShader, IGeometry* pShape, glm::mat4 & mW, Texture* pTexture, Texture* pBump )
+bool House::DrawPrimitive( Effect* pEffect, IGeometry* pShape, const glm::mat4 & mW )
 {
-	UNREFERENCED_PARAMETER(pBump);
-	UNREFERENCED_PARAMETER(pTexture);
-
 	using AntiMatter::AppLog;
 	using std::string;
 	using glm::mat4;
@@ -536,9 +595,9 @@ HRESULT House::DrawPrimitive( ShaderProgram* pShader, IGeometry* pShape, glm::ma
 	glm::mat3 mNormal(mModelView);
 	mNormal = glm::transpose(mNormal._inverse());
 
-	pShader->AssignUniformMat4( string("mModelView"),	mModelView );
-	pShader->AssignUniformMat3( string("mNormal"),		mNormal );
-	pShader->AssignUniformMat4( string("mMVP"),			mMVP );
+	pEffect->AssignUniformMat4( string("mModelView"),	mModelView );
+	pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
+	pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
 
 	// execute the shader program
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -546,7 +605,7 @@ HRESULT House::DrawPrimitive( ShaderProgram* pShader, IGeometry* pShape, glm::ma
 
 	AppLog::Ref().OutputGlErrors();	
 	
-	return S_OK;
+	return true;
 }
 
 bool House::LoadAssets()
@@ -635,7 +694,7 @@ std::istream & operator >> ( std::istream & in, House & r )
 
 		std::vector<std::string> sAssets;
 		Material matWalls;
-		Material matRoof;	
+		Material matRoof;
 
 		if( strcmp(sBuffer, "house") == 0 )
 		{

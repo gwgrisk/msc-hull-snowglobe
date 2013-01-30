@@ -4,10 +4,13 @@
 // structs
 struct LightInfo
 {
-	vec4 Position;
-	vec3 La;
-	vec3 Ld;
-	vec3 Ls;
+	vec4	Position;
+	vec3	La;
+	vec3	Ld;
+	vec3	Ls;
+	vec3	vDirection;
+	float	rExponent;
+	float	rCutOff;
 };
 
 struct MaterialInfo

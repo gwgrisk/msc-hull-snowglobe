@@ -118,7 +118,7 @@ bool SceneGraph::InitializeGraph()
 		std::string("globe"), 
 		350.0f, 30, 30, 
 		string(""), 
-		glm::vec4(1.0, 1.0, 1.0, 1.0) 
+		glm::vec4(1.0, 1.0, 1.0, 0.8) 
 	);
 
 	// position the globe

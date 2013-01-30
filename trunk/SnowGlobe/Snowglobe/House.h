@@ -8,13 +8,16 @@
 #include "Tri.h"
 #include "Texture.h"
 #include "Material.h"
+#include "Vbo.h"
+#include "VertexClass.h"
 #include <glm\glm.hpp>
 
 #include <vector>
 #include <string>
 #include <fstream>
 
-class ShaderProgram;
+
+class Effect;
 class SceneGraph;
 
 enum HouseAssets	{ WallTexture, RoofTexture, WallBump, RoofBump, NumAssets };
@@ -38,8 +41,12 @@ private:
 
 	std::vector<glm::mat4>		m_mW;
 
-	ShaderProgram*				m_pQuadShader;
-	ShaderProgram*				m_pTriShader;
+	Effect*						_pQuadEffect;
+	Effect*						_pTriEffect;
+	Vbo<CustomVertex> *			_pQuadVbo;
+	Vbo<CustomVertex> *			_pTriVbo;
+	GLuint						_nQuadVao;
+	GLuint						_nTriVao;
 
 	GLuint						m_nSunSub;
 	GLuint						m_nSpotlightSub;
@@ -52,9 +59,15 @@ private:
 	bool LoadAssets();
 	void TransformGeometry();
 
-	bool CreateShader( ShaderProgram** pShader, IGeometry & pShape );
-	void SetShaderArgs( ShaderProgram * pShader, Texture* pTex, Texture* pBump, const Material & mat );	
-	HRESULT DrawPrimitive( ShaderProgram* pShader, IGeometry* pShape, glm::mat4 & mW, Texture* pTexture, Texture* pBump );
+	bool InitializeGeometry();
+	bool InitializeTextures();
+	bool InitializeVbo( Vbo<CustomVertex> **ppVbo, IGeometry & geometry );
+	bool InitializeVao( Effect* pEffect, GLuint & nVaoId, Vbo<CustomVertex>* pVbo );
+
+	bool GetShader( Effect** ppEffect );
+	bool SetShaderArgs( Effect* pEffect, const GLuint nVaoId, const Vbo<CustomVertex>* pVbo, const Texture* pTex, const Texture* pBump, const Material & mtl );
+
+	bool DrawPrimitive( Effect* pEffect, IGeometry* pShape, const glm::mat4 & mW );
 
 public:
 	House();

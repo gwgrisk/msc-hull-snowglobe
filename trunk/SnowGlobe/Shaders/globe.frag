@@ -17,10 +17,13 @@ out vec4 FragColour;
 
 struct LightInfo
 {
-	vec4 Position;
-	vec3 La;
-	vec3 Ld;
-	vec3 Ls;
+	vec4	Position;
+	vec3	La;
+	vec3	Ld;
+	vec3	Ls;
+	vec3	vDirection;
+	float	rExponent;
+	float	rCutOff;
 };
 
 struct MaterialInfo
@@ -41,6 +44,27 @@ uniform	sampler2D		tex;
 uniform mat4			mModelView;
 uniform mat3			mNormal;
 uniform mat4			mMVP;
+
+vec3 SpotlightPhong( int n, vec3 vLightDir )
+{	
+	vec3	s			= vLightDir;
+	vec3	v			= vViewDirection;
+	vec3	r			= normalize(reflect( -s, vVertexNormal ));
+	float	angle		= acos( dot( -s, lights[n].vDirection ) );
+	float	cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );		
+	
+	float	SdotN		= max( dot(s, vVertexNormal), 0.0 );
+	vec3	ambient		= lights[n].La * material.Ka;
+	vec3	diffuse		= lights[n].Ld * material.Kd * SdotN;
+	vec3	specular	= vec3(0.0);
+
+	if( SdotN > 0.0 )
+	{
+		specular = lights[n].Ls * material.Ks * pow( max( dot(r,v), 0.0 ), material.rShininess );
+	}
+
+	return ambient + diffuse + specular;
+}
 
 vec3 Phong( int n, vec3 vLightDir )
 {
@@ -66,10 +90,10 @@ vec4 Spotlights()
 {
 	vec3 vLightIntensity;
 
-	vLightIntensity = Phong( 0, vec3(mSpotDirections[0]) );
-	vLightIntensity += Phong( 1, vec3(mSpotDirections[1]) );
-	vLightIntensity += Phong( 2, vec3(mSpotDirections[2]) );
-	vLightIntensity += Phong( 3, vec3(mSpotDirections[3]) );		
+	vLightIntensity = SpotlightPhong( 0, vec3(mSpotDirections[0]) );
+	vLightIntensity += SpotlightPhong( 1, vec3(mSpotDirections[1]) );
+	vLightIntensity += SpotlightPhong( 2, vec3(mSpotDirections[2]) );
+	vLightIntensity += SpotlightPhong( 3, vec3(mSpotDirections[3]) );		
 
 	return vec4(vLightIntensity, 1.0);
 }

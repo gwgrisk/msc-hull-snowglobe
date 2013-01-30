@@ -441,31 +441,43 @@ void Lake::SetUniforms()
 		m_pEffect->AssignUniformVec2( ssDirection.str(), m_vDirection[v] );
 	}
 	
-	// lights ( transformed into view space )
-	vector<Light*> lights = this->Graph()->Lights().Lights();
+	// lights - light[0-3] = spotlights, light[4] = sun
+	const vector<Light*> & lights = this->Graph()->Lights().Lights();
 	for( unsigned int x = 0; x < lights.size(); x++ )
 	{
-		vec4 Pos	= Graph()->Cam().V() * lights[x]->Pos();	
-		vec3 la		= lights[x]->La();
-		vec3 ld		= lights[x]->Ld();
-		vec3 ls		= lights[x]->Ls();		
-		
-		stringstream ssP, ssLa, ssLd, ssLs;
-			
+		// light position (transformed to view space)
+		glm::vec4	vLightPos	= Graph()->Cam().V() * lights[x]->Pos();
+		glm::vec3	la			= lights[x]->La();
+		glm::vec3	ld			= lights[x]->Ld();
+		glm::vec3	ls			= lights[x]->Ls();
+		glm::vec3	vDir		= lights[x]->Direction();
+		float		rExp		= lights[x]->Exponent();
+		float		rCutOff		= lights[x]->CutOff();
+
+		stringstream ssP, ssLa, ssLd, ssLs, ssD, ssE, ssC;
 		ssP  << "lights[" << x << "].Position";
 		ssLa << "lights[" << x << "].La";
 		ssLd << "lights[" << x << "].Ld";
 		ssLs << "lights[" << x << "].Ls";
+		ssD  << "lights[" << x << "].vDirection";
+		ssE  << "lights[" << x << "].rExponent";
+		ssC  << "lights[" << x << "].rCutOff";
 
 		string sPosition	= ssP.str();
 		string sLa			= ssLa.str();
 		string sLd			= ssLd.str();
 		string sLs			= ssLs.str();
-		
-		m_pEffect->AssignUniformVec4( sPosition,	Pos );
-		m_pEffect->AssignUniformVec3( sLa,			la );
-		m_pEffect->AssignUniformVec3( sLd,			ld );
-		m_pEffect->AssignUniformVec3( sLs,			ls );
+		string sDir			= ssD.str();
+		string sExp			= ssE.str();
+		string sCut			= ssC.str();
+
+		m_pEffect->AssignUniformVec4( sPosition, vLightPos );
+		m_pEffect->AssignUniformVec3( sLa, la );
+		m_pEffect->AssignUniformVec3( sLd, ld );
+		m_pEffect->AssignUniformVec3( sLs, ls );
+		m_pEffect->AssignUniformVec3( sDir, vDir );
+		m_pEffect->AssignUniformFloat( sExp, rExp );
+		m_pEffect->AssignUniformFloat( sCut, rCutOff );
 	}
 	
 	AppLog::Ref().OutputGlErrors();

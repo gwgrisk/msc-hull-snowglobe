@@ -4,10 +4,13 @@
 // structs
 struct LightInfo
 {
-	vec4 Position;
-	vec3 La;
-	vec3 Ld;
-	vec3 Ls;
+	vec4	Position;
+	vec3	La;
+	vec3	Ld;
+	vec3	Ls;
+	vec3	vDirection;
+	float	rExponent;
+	float	rCutOff;
 };
 
 struct MaterialInfo
@@ -39,8 +42,7 @@ out vec3 vViewDirection;		// direction to camera			(in view space)
 out vec3 vSunDirection;			// direction to light source	(in view space)
 out mat4 mSpotDirections;		// direction to each spotlight  (in view space)
 out vec2 TexCoord;				// texture coordinate			( untransformed ;) )
-
-
+out vec3 vVertexPos;
 
 
 void main()
@@ -48,7 +50,7 @@ void main()
 	// transform vertex position and normal into view space for Phong lighting calculation
 	
 	// Get vertex normal, View direction and Light direction in view space
-	vec3 vVertexPos = vec3(mModelView * vec4( VertexPosition, 1.0 ));
+	vVertexPos = vec3(mModelView * vec4( VertexPosition, 1.0 ));
 	vec3 vLightPos;
 	vec3 vLightDir;
 	
@@ -59,10 +61,10 @@ void main()
 	// compute the light direction for each spotlight, store in the mSpotDirections matrix ;)
 	for(int n = 0; n < 4; n ++ )
 	{
-		vLightPos = vec3( lights[n].Position );
-		vLightDir = normalize( vLightPos - vVertexPos );
-
-		mSpotDirections[n] = vec4(vLightDir, 1.0);
+		vLightPos			= vec3( mModelView * vec4( lights[n].Position ) );
+		vLightDir			= normalize( vLightPos - vVertexPos );
+		mSpotDirections[n]	= vec4(vLightDir, 0.0);
+		
 	}
 
 	// pass texture coord into the fragment shader

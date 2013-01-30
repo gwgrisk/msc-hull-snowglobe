@@ -133,8 +133,8 @@
     <ClInclude Include="Drift.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="EffectMgr.h" />
+    <ClInclude Include="Fbo.h" />
     <ClInclude Include="Fire.h" />
-    <ClInclude Include="FrameBufferObject.h" />
     <ClInclude Include="Globe.h" />
     <ClInclude Include="HashedString.h" />
     <ClInclude Include="House.h" />
@@ -167,7 +167,6 @@
     <ClInclude Include="Tree.h" />
     <ClInclude Include="Tri.h" />
     <ClInclude Include="Vbo.h" />
-    <ClInclude Include="VertexBufferObject.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Simulation.h" />
     <ClInclude Include="stdafx.h" />
@@ -186,7 +185,7 @@
     </ClCompile>
     <ClCompile Include="Effect.cpp" />
     <ClCompile Include="EffectMgr.cpp" />
-    <ClCompile Include="FrameBufferObject.cpp" />
+    <ClCompile Include="Fbo.cpp" />
     <ClCompile Include="Globe.cpp" />
     <ClCompile Include="House.cpp" />
     <ClCompile Include="IGraphNode.cpp" />
@@ -221,7 +220,6 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tree.cpp" />
     <ClCompile Include="Tri.cpp" />
-    <ClCompile Include="VertexBufferObject.cpp" />
     <ClCompile Include="WavefrontMtl.cpp" />
     <ClCompile Include="WavefrontObj.cpp" />
   </ItemGroup>
