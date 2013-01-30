@@ -6,7 +6,6 @@
 #include "ShaderTypes.h"
 #include "ShaderDesc.h"
 #include "ShaderInputAttribute.h"
-#include "ShaderProgram.h"
 
 #include "VertexClass.h"
 #include "SceneGraph.h"

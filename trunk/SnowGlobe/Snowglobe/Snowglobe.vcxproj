@@ -165,7 +165,6 @@
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Tree.h" />
-    <ClInclude Include="TreeShaderz.h" />
     <ClInclude Include="Tri.h" />
     <ClInclude Include="Vbo.h" />
     <ClInclude Include="VertexBufferObject.h" />
@@ -221,7 +220,6 @@
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Tree.cpp" />
-    <ClCompile Include="TreeShaderz.cpp" />
     <ClCompile Include="Tri.cpp" />
     <ClCompile Include="VertexBufferObject.cpp" />
     <ClCompile Include="WavefrontMtl.cpp" />

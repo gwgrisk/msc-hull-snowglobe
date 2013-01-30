@@ -118,7 +118,11 @@ bool SceneLights::HardcodedLights()
 				glm::vec4(x, rRadius, z, 1), 
 				vNone, 
 				vColour,
-				vColour * rMultiplier
+				vColour * rMultiplier,
+				Light::LightType::SpotLight,
+				glm::vec3(0, -1, 0),
+				1.0f,
+				15.0f
 			)
 		);
 	}
@@ -134,19 +138,7 @@ bool SceneLights::HardcodedLights()
 			vFull * rMultiplier
 		) 
 	);
-
-	/*
-	// globe-specularity light
-	AddLight( new Light( 
-			this->Graph(), 
-			this->Graph()->Root(), 
-			std::string("globe-specular"),	
-			glm::vec4(100.0f, 200.0f, -500.0f, 1.0f), 
-			La, full, full
-		) 
-	);
-	*/
-	
+		
 	bRet = true;
 
 	// write lights out to disk

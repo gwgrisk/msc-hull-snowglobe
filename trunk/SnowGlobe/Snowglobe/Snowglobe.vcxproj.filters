@@ -115,9 +115,6 @@
     <ClCompile Include="Tree.cpp">
       <Filter>Source Files\Scene\Actors</Filter>
     </ClCompile>
-    <ClCompile Include="TreeShaderz.cpp">
-      <Filter>Source Files\Scene\Actors</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -262,9 +259,6 @@
       <Filter>Header Files\Data</Filter>
     </ClInclude>
     <ClInclude Include="Tree.h">
-      <Filter>Header Files\Scene\Actors</Filter>
-    </ClInclude>
-    <ClInclude Include="TreeShaderz.h">
       <Filter>Header Files\Scene\Actors</Filter>
     </ClInclude>
     <ClInclude Include="Colours.h">

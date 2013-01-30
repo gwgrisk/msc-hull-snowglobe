@@ -24,31 +24,43 @@ Light::Light() :
 	IGraphNode		( NULL, NULL, std::string("light") ),
 	m_pEffect		( NULL ),
 	m_pVbo			( NULL ),
-	m_nVaoId		( 0 ),
-	m_Type			( DirectionalLight ),
-	m_vIntensity	( glm::vec3(0.0, 0.0, 0.0) ),
+	m_nVaoId		( 0 ),	
 	m_vPosition		( glm::vec4(0.0, 0.0, 0.0, 0.0) ),
-	m_vDirection	( glm::vec3(0.0, 0.0, 0.0) ),
 	m_La			( glm::vec3(0.5, 0.5, 0.5) ),
 	m_Ld			( glm::vec3(0.8, 0.8, 0.8) ),
-	m_Ls			( glm::vec3(0.1, 0.1, 0.1) )
+	m_Ls			( glm::vec3(0.2, 0.2, 0.2) ),
+	m_Type			( LightType::DirectionalLight ),
+	m_vDirection	( glm::vec3(0.0, 0.0, 0.0) ),
+	m_rExponent		( 1.0f ),
+	m_rCutOff		( 20.0f )
 {
 	Initialize();
 }
-Light::Light(	SceneGraph * pGraph, IGraphNode* pParent, const std::string & sId, 
-				const glm::vec4 & pos, 
-				const glm::vec3 & La, const glm::vec3 & Ld, const glm::vec3 & Ls ) :
+Light::Light(
+		SceneGraph *		pGraph, 
+		IGraphNode*			pParent, 
+		const std::string & sId, 
+		const glm::vec4 &	pos, 
+		const glm::vec3 &	La, 
+		const glm::vec3 &	Ld, 
+		const glm::vec3 &	Ls,
+		const LightType		lt,
+		const glm::vec3 &	vDir, 
+		const real			exp, 
+		const real			rCutoff 
+	) :
 	IGraphNode		( pGraph, pParent, sId ),
 	m_pEffect		( NULL ),
 	m_pVbo			( NULL ),
-	m_nVaoId		( 0 ),
-	m_Type			( DirectionalLight ),
-	m_vIntensity	( glm::vec3(0.0, 0.0, 0.0) ),
+	m_nVaoId		( 0 ),	
 	m_vPosition		( pos ),
-	m_vDirection	( glm::vec3(0.0, -1.0, 0.0) ),
 	m_La			( La ),
 	m_Ld			( Ld ),
-	m_Ls			( Ls )
+	m_Ls			( Ls ),
+	m_Type			( lt ),
+	m_vDirection	( vDir ),
+	m_rExponent		( exp ),
+	m_rCutOff		( rCutoff )
 {
 	Initialize();
 }
@@ -56,14 +68,15 @@ Light::Light( const Light & rhs ) :
 	IGraphNode		( rhs.m_pGraph, rhs.m_pParent, rhs.m_sId ),
 	m_pEffect		( NULL ),
 	m_pVbo			( NULL ),
-	m_nVaoId		( 0 ),
-	m_Type			( rhs.m_Type ),
-	m_vIntensity	( rhs.m_vIntensity ),
+	m_nVaoId		( 0 ),	
 	m_vPosition		( rhs.m_vPosition ),
-	m_vDirection	( rhs.m_vDirection ),
 	m_La			( rhs.m_La ),
 	m_Ld			( rhs.m_Ld ),
-	m_Ls			( rhs.m_Ls )
+	m_Ls			( rhs.m_Ls ),
+	m_Type			( rhs.m_Type ),	
+	m_vDirection	( rhs.m_vDirection ),
+	m_rExponent		( rhs.m_rExponent ),
+	m_rCutOff		( rhs.m_rCutOff )
 {
 	Initialize();
 }
@@ -71,6 +84,8 @@ Light & Light::operator=( const Light & rhs )
 {
 	if( this != &rhs )
 	{	
+		Uninitialize();
+
 		// IGraphNode
 		m_pGraph		= rhs.m_pGraph;
 		m_pParent		= rhs.m_pParent;
@@ -78,15 +93,16 @@ Light & Light::operator=( const Light & rhs )
 
 		// Light
 		m_material		= rhs.m_material;
-		m_Type			= rhs.m_Type;
-		m_vPosition		= rhs.m_vPosition;
-		m_vDirection	= rhs.m_vDirection;
-		m_vIntensity	= rhs.m_vIntensity;
+		m_vPosition		= rhs.m_vPosition;	
 		m_La			= rhs.m_La;
 		m_Ld			= rhs.m_Ld;
 		m_Ls			= rhs.m_Ls;
+		m_Type			= rhs.m_Type;
+		m_vDirection	= rhs.m_vDirection;
+		m_rExponent		= rhs.m_rExponent;
+		m_rCutOff		= rhs.m_rCutOff;
 
-		if( m_pEffect )		
+		if( m_pEffect )
 			m_pEffect = NULL;
 
 		Initialize();
@@ -109,12 +125,6 @@ void Light::Initialize()
 		AppLog::Ref().LogMsg("%s initialize geometry failed for globe object", __FUNCTION__ );
 		return;
 	}
-	
-	if( ! SetPerVertexColour() )	// can only do this after the geometry has been created
-	{
-		AppLog::Ref().LogMsg("%s initialize vertex colours failed for globe object", __FUNCTION__ );
-		return;
-	}
 
 	if( ! GetShader() )
 	{
@@ -122,7 +132,7 @@ void Light::Initialize()
 		Uninitialize();
 		return;
 	}
-	
+
 	if( ! InitializeVbo( m_Sphere ) )
 	{
 		AppLog::Ref().LogMsg( "%s failed to Create a vertex buffer from supplied geometry", __FUNCTION__ );
@@ -136,6 +146,12 @@ void Light::Initialize()
 		Uninitialize();
 		return;
 	}
+	
+	if( ! SetPerVertexColour() )	// can only do this after the geometry has been created
+	{
+		AppLog::Ref().LogMsg("%s initialize vertex colours failed for globe object", __FUNCTION__ );
+		return;
+	}			
 }
 void Light::Uninitialize()
 {
@@ -507,14 +523,15 @@ HRESULT Light::DrawItem()
 // auxilary persistence functions
 std::ostream & operator << ( std::ostream & out, const Light & r )
 {
-	out << "id "		<< r.Id()	 << "\n";
-	out << "type "		<< r.Type()  << "\n";
-	out << "intensity "	<< r.Intensity().x	<< " " << r.Intensity().y	<< " " << r.Intensity().z	<< "\n";
+	out << "id "		<< r.Id()	 << "\n";	
 	out << "position "	<< r.Pos().x		<< " " << r.Pos().y			<< " " << r.Pos().z			<< " "	<< r.Pos().w << "\n";
-	out << "direction "	<< r.Direction().x	<< " " << r.Direction().y	<< " " << r.Direction().z	<< "\n";
 	out << "La "		<< r.La().x	 << " " << r.La().y	<< " "	<< r.La().z << "\n";
 	out << "Ld "		<< r.Ld().x	 << " " << r.Ld().y	<< " "	<< r.Ld().z << "\n";
 	out << "Ls "		<< r.Ls().x	 << " " << r.Ls().y	<< " "	<< r.Ls().z << "\n" << std::endl;
+	out << "type "		<< r.Type()  << "\n";
+	out << "direction "	<< r.Direction().x	<< " " << r.Direction().y	<< " " << r.Direction().z	<< "\n";
+	out << "exponent "	<< r.Exponent() << "\n";
+	out << "cutoff "	<< r.CutOff() << "\n";
 
 	return out;
 }
@@ -527,31 +544,34 @@ std::istream & operator >> ( std::istream & in, Light & r )
 
 	string	sBuffer;
 	string	sId;
-	int		tmpType;
-	vec3	tmpIntensity;
+	
 	vec4	tmpPos;	
-	vec3	tmpDirection;
 	vec3	la, ld, ls;	
+	int		tmpType;	
+	vec3	tmpDirection;
+	real	rExp, rCutOff;
 
 	try
 	{
 		in >> sBuffer >> sId;
-		in >> sBuffer >> tmpType;
-		in >> sBuffer >> tmpIntensity.x >> tmpIntensity.y >> tmpIntensity.z;
-		in >> sBuffer >> tmpPos.x >> tmpPos.y >> tmpPos.z	>> tmpPos.w;
-		in >> sBuffer >> tmpDirection.x >> tmpDirection.y >> tmpDirection.z;
+		in >> sBuffer >> tmpPos.x >> tmpPos.y >> tmpPos.z	>> tmpPos.w;		
 		in >> sBuffer >> la.x >> la.y	>> la.z;
 		in >> sBuffer >> ld.x >> ld.y	>> ld.z;
 		in >> sBuffer >> ls.x >> ls.y	>> ls.z;
-	
-		r.Type( (Light::LightType)tmpType );
+		in >> sBuffer >> tmpType;		
+		in >> sBuffer >> tmpDirection.x >> tmpDirection.y >> tmpDirection.z;
+		in >> sBuffer >> rExp;
+		in >> sBuffer >> rCutOff;
+			
 		r.SetId( sId );
-		r.Intensity( tmpIntensity );
 		r.Pos( tmpPos );
-		r.Direction( tmpDirection );
 		r.La( la );
 		r.Ld( ld );
-		r.Ls( ls );	
+		r.Ls( ls );
+		r.Type( (Light::LightType)tmpType );
+		r.Direction( tmpDirection );
+		r.Exponent( rExp );
+		r.CutOff( rCutOff );
 	}
 	catch(...)
 	{

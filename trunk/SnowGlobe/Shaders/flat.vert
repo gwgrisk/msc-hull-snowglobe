@@ -7,10 +7,13 @@ subroutine uniform FlatLightIntensity LightIntensity;
 
 struct LightInfo
 {
-	vec4 Position;
-	vec3 La;
-	vec3 Ld;
-	vec3 Ls;
+	vec4	Position;
+	vec3	La;
+	vec3	Ld;
+	vec3	Ls;
+	vec3	vDirection;		// for spots only, normalized direction vector
+	float	rExponent;		// for spots only, angular attenuation exponent
+	float	rCutOff;		// for spots only, cutoff angle (0..90)
 };
 
 struct MaterialInfo
