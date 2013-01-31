@@ -25,6 +25,18 @@
 		</InputAttributes>
 	</Effect>
 
+	<Effect name="bump-textured-phong" autobuild="true">
+		<Shader type="vertex" name="bump-textured-phong.vert" />
+		<Shader type="fragment" name="bump-textured-phong.frag" />
+
+		<InputAttributes>
+			<VertexDescription type="CustomVertex" stride="72" />
+			<attrib fieldname="VertexPosition" size="3" offset="0" />
+			<attrib fieldname="VertexNormal" size="3" offset="3" />
+			<attrib fieldname="VertexTexCoord" size="2" offset="6" />
+		</InputAttributes>
+	</Effect>
+
 	<Effect name="lake" autobuild="true">
 		<Shader type="vertex" name="lake.vert" />
 		<Shader type="fragment" name="lake.frag" />

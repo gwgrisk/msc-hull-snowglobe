@@ -381,6 +381,12 @@
     <None Include="..\Shaders\smooth.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="..\Shaders\bump-textured-phong.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="..\Shaders\bump-textured-phong.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

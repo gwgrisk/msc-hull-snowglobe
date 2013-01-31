@@ -101,6 +101,8 @@
     <None Include="..\assets\heightfield3.bmp" />
     <None Include="..\assets\heightfield4.bmp" />
     <None Include="..\assets\lush_grass.jpg" />
+    <None Include="..\Shaders\bump-textured-phong.frag" />
+    <None Include="..\Shaders\bump-textured-phong.vert" />
     <None Include="..\Shaders\debug.frag" />
     <None Include="..\Shaders\debug.geo" />
     <None Include="..\Shaders\debug.vert" />

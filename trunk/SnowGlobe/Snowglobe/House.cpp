@@ -389,7 +389,7 @@ bool House::GetShader( Effect** ppEffect )
 	// warning C4482: nonstandard extension used: enum 'Effect::EffectBuildState' used in qualified name
 #pragma warning (push)
 #pragma warning (disable: 4482)
-	if( EffectMgr::Ref().Find( string("textured-phong"), ppEffect ) )
+	if( EffectMgr::Ref().Find( string("bump-textured-phong"), ppEffect ) )
 	{
 		if( (*ppEffect)->BuildState() == Effect::EffectBuildState::Linked )
 		{
