@@ -24,7 +24,6 @@
 #endif
 
 #pragma comment(lib, "util.lib")
-#pragma comment(lib, "math.lib")
 
 #include <AntiMatter\Exceptions.h>
 #include <AntiMatter\AppLog.h>

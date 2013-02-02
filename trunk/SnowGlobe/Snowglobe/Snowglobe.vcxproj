@@ -43,8 +43,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\3pSDK\AntiMatter\include;C:\3pSDK\glm-0.9.2.7;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\3pSDK\AntiMatter\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\include\AntiMatter;..\3pSDK\glm-0.9.3.1;..\3pSDK\gxbase_R737_source;..\3pSDK\TinyXml\ticpp;$(IncludePath)</IncludePath>
+    <LibraryPath>..\lib;..\3pSDK\gxbase_R737_source\Debug;..\3pSDK\gxbase_R737_source\Release;..\3pSDK\TinyXml\ticpp\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -158,7 +158,6 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderDesc.h" />
     <ClInclude Include="ShaderInputAttribute.h" />
-    <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="ShaderTypes.h" />
     <ClInclude Include="slowglobe-cfg.h" />
     <ClInclude Include="Smoke.h" />
@@ -205,7 +204,6 @@
     <ClCompile Include="SeasonalTimeline.cpp" />
     <ClCompile Include="Segment.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Simulation.cpp" />
     <ClCompile Include="snow.cpp" />
     <ClCompile Include="Snowfall.cpp">

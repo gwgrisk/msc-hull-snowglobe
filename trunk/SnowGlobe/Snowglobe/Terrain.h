@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-#include <AntiMatter\math.h>
 #include "IGraphNode.h"
 #include "Plane.h"
 #include "Texture.h"
