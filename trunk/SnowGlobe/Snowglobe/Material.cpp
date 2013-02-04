@@ -38,57 +38,52 @@ std::istream & operator >> ( std::istream & in, Material & r )
 	vec3			vKs		= glm::vec3(1,1,1);
 	float			rShine	= 1.0f;
 
-	in >> sBuffer;
-
-	if( strcmp(sBuffer, "newmtl") == 0 )
+	while( in >> sFieldName, in.good() && sFieldName.length() > 0 )
 	{
-		while( in >> sFieldName, in.good() && sFieldName.length() > 0 )
-		{
-			transform( sFieldName.begin(), sFieldName.end(), sFieldName.begin(), tolower );
+		transform( sFieldName.begin(), sFieldName.end(), sFieldName.begin(), tolower );
 		
-			if( sFieldName.compare("newmtl") == 0 )
-				in >> sMtlName;
+		if( sFieldName.compare("newmtl") == 0 )
+			in >> sMtlName;
 			
-			else if( sFieldName.compare("ns") == 0 )
-				in >> ns;
+		else if( sFieldName.compare("ns") == 0 )
+			in >> ns;
 			
-			else if( sFieldName.compare("d") == 0 )
-				in >> d;
+		else if( sFieldName.compare("d") == 0 )
+			in >> d;
 			
-			else if( sFieldName.compare("tr") == 0 )
-				in >> tr;
+		else if( sFieldName.compare("tr") == 0 )
+			in >> tr;
 			
-			else if( sFieldName.compare("tf") == 0 )
-				in >> tf.r >> tf.g >> tf.b;
+		else if( sFieldName.compare("tf") == 0 )
+			in >> tf.r >> tf.g >> tf.b;
 			
-			else if( sFieldName.compare("illum") == 0 )
-				in >> illum;
+		else if( sFieldName.compare("illum") == 0 )
+			in >> illum;
 
-			else if( sFieldName.compare("ka") == 0 )
-				in >> vKa.r >> vKa.g >> vKa.b;
+		else if( sFieldName.compare("ka") == 0 )
+			in >> vKa.r >> vKa.g >> vKa.b;
 			
-			else if( sFieldName.compare("kd") == 0 )
-				in >> vKd.r >> vKd.g >> vKd.b;
+		else if( sFieldName.compare("kd") == 0 )
+			in >> vKd.r >> vKd.g >> vKd.b;
 
-			else if( sFieldName.compare("ks") == 0 )
-				in >> vKs.r >> vKs.g >> vKs.b;
+		else if( sFieldName.compare("ks") == 0 )
+			in >> vKs.r >> vKs.g >> vKs.b;
 
-			else if( sFieldName.compare("shine") == 0 )
-				in >> rShine;
-		}
-		
-		r.Name( sMtlName );
-		r.Ka(vKa);
-		r.Kd(vKd);
-		r.Ks(vKs);
-		r.Shininess( rShine );
-
-		r.Ns( ns );
-		r.D( d );
-		r.Tr( tr );
-		r.Tf( tf );
-		r.Illum( illum );
+		else if( sFieldName.compare("shine") == 0 )
+			in >> rShine;
 	}
+		
+	r.Name( sMtlName );
+	r.Ka(vKa);
+	r.Kd(vKd);
+	r.Ks(vKs);
+	r.Shininess( rShine );
+
+	r.Ns( ns );
+	r.D( d );
+	r.Tr( tr );
+	r.Tf( tf );
+	r.Illum( illum );
 
 	return in;
 }

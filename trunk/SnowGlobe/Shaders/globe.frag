@@ -51,7 +51,7 @@ vec3 SpotlightPhong( int n, vec3 vLightDir )
 	vec3	v			= vViewDirection;
 	vec3	r			= normalize(reflect( -s, vVertexNormal ));
 	float	angle		= acos( dot( -s, lights[n].vDirection ) );
-	float	cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );		
+	float	cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );
 	
 	float	SdotN		= max( dot(s, vVertexNormal), 0.0 );
 	vec3	ambient		= lights[n].La * material.Ka;
@@ -64,6 +64,15 @@ vec3 SpotlightPhong( int n, vec3 vLightDir )
 	}
 
 	return ambient + diffuse + specular;
+
+	if( angle < cutoff )
+	{
+		return ambient + diffuse + specular;
+	}	
+	else
+	{
+		return vec3(0.0, 0.0, 0.0);
+	}			
 }
 
 vec3 Phong( int n, vec3 vLightDir )

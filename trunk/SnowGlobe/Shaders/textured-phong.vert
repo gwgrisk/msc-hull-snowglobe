@@ -61,10 +61,9 @@ void main()
 	// compute the light direction for each spotlight, store in the mSpotDirections matrix ;)
 	for(int n = 0; n < 4; n ++ )
 	{
-		vLightPos			= vec3( mModelView * vec4( lights[n].Position ) );
+		vLightPos			= vec3( lights[n].Position );
 		vLightDir			= normalize( vLightPos - vVertexPos );
-		mSpotDirections[n]	= vec4(vLightDir, 0.0);
-		
+		mSpotDirections[n]	= vec4(vLightDir, 0.0);		
 	}
 
 	// pass texture coord into the fragment shader

@@ -63,7 +63,16 @@ vec3 SpotlightPhong( int n, vec3 vLightDir )
 		specular = lights[n].Ls * material.Ks * pow( max( dot(r,v), 0.0 ), material.rShininess );
 	}
 
-	return ambient + diffuse + specular;
+	if( angle < cutoff )
+	{
+		return ambient + diffuse + specular;
+	}
+	else
+	{
+		return vec3(0.0, 0.0, 0.0);
+	}
+
+	
 }
 
 vec3 Phong( int n, vec3 vLightDir )

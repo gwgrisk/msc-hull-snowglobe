@@ -9,7 +9,7 @@ in vec3 vVertexNormal;			// Vertex normal				(in view space)
 in vec3 vViewDirection;			// direction to camera			(in view space)
 in vec3 vSunDirection;			// direction to light source	(in view space)
 in mat4 mSpotDirections;		// direction to each spotlight  (in view space)
-in vec2 TexCoord;				// texture coordinate			( untransformed ;) )
+in vec2 TexCoord;				// texture coordinate
 in vec3 vVertexPos;
 
 // output
@@ -39,70 +39,74 @@ uniform vec3			vViewPosition;	// camera position (view space)
 uniform LightInfo		lights[5];		// light[0-3] = spotlights, light[4] = sun
 uniform MaterialInfo	material;
 
-uniform	sampler2D		tex;
-uniform sampler2D		texBump;
-
 uniform mat4			mModelView;
 uniform mat3			mNormal;
 uniform mat4			mMVP;
 
-vec3 SpotlightPhong( int n, vec3 vLightDir )
-{	
-	vec3	s			= vLightDir;
-	vec3	v			= vViewDirection;
-	vec3	r			= normalize(reflect( -s, vVertexNormal ));
-	float	angle		= acos( dot( -s, lights[n].vDirection ) );
-	float	cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );		
-	
-	float	SdotN		= max( dot(s, vVertexNormal), 0.0 );
-	vec3	ambient		= lights[n].La * material.Ka;
-	vec3	diffuse		= lights[n].Ld * material.Kd * SdotN;
-	vec3	specular	= vec3(0.0);
+uniform	sampler2D		tex;
+uniform sampler2D		texBump;
 
-	if( SdotN > 0.0 )
+
+vec4 SpotlightPhong( int n, vec3 vLightDir )
+{	
+	vec3 vTexNormal		= normalize( ( texture2D(texBump, TexCoord).xyz * 2.0 ) - 1.0 );
+	float NdotL			= max( 0.0, dot( vTexNormal, vLightDir ));
+
+	vec3 r				= normalize( ( ( 2.0 * vTexNormal ) * NdotL ) - vLightDir );
+	vec3 v				= normalize( vViewDirection );
+	float RdotV			= max( 0.0, dot( r, v ) );
+
+	float angle			= acos( dot( -vLightDir, lights[n].vDirection ) );
+	float cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );		
+	
+	if( angle < cutoff )
 	{
-		specular = lights[n].Ls * material.Ks * pow( max( dot(r,v), 0.0 ), material.rShininess );
+		vec3 ambient	= lights[n].La * material.Ka;
+		vec3 diffuse	= lights[n].Ld * material.Kd * NdotL;
+		vec3 specular	= lights[n].Ls * material.Ks * pow( RdotV, material.rShininess );
+	
+		return vec4(ambient + diffuse + specular, 1.0);
+	}
+	else
+	{
+		return vec4(0.0, 0.0, 0.0, 1.0);	
 	}
 
-	return ambient + diffuse + specular;
 }
 
-vec3 Phong( int n, vec3 vLightDir )
+vec4 Phong( int n, vec3 vLightDir )
 {
-	vec3	s = vLightDir;
-	vec3	v = vViewDirection;
-	vec3	r = normalize(reflect( -s, vVertexNormal ));
-	
-	float	SdotN		= max( dot(s, vVertexNormal), 0.0 );
-	vec3	ambient		= lights[n].La * material.Ka;
-	vec3	diffuse		= lights[n].Ld * material.Kd * SdotN;
-	vec3	specular	= vec3(0.0);
+	vec3 vTexNormal		= normalize( ( texture2D(texBump, TexCoord).xyz * 2.0 ) - 1.0 );
+	float NdotL			= max( 0.0, dot( vTexNormal, vLightDir ));
 
-	if( SdotN > 0.0 )
-	{
-		specular = lights[n].Ls * material.Ks * pow( max( dot(r,v), 0.0 ), material.rShininess );
-	}
+	vec3 r				= normalize( ( ( 2.0 * vTexNormal ) * NdotL ) - vLightDir );
+	vec3 v				= normalize( vViewDirection );
+	float RdotV			= max( 0.0, dot( r, v ) );	
+
+	vec4	ambient		= vec4(lights[n].La * material.Ka, 1.0);
+	vec4	diffuse		= vec4(lights[n].Ld * material.Kd * NdotL, 1.0);
+	vec4	specular	= vec4(lights[n].Ls * material.Ks * pow( RdotV, material.rShininess ), 1.0);
 
 	return ambient + diffuse + specular;
 }
 
 subroutine (FragmentLightIntensity)
 vec4 Spotlights()
-{
-	vec3 vLightIntensity;
+{	
+	vec4 vLightIntensity;
 
 	vLightIntensity = SpotlightPhong( 0, vec3(mSpotDirections[0]) );
 	vLightIntensity += SpotlightPhong( 1, vec3(mSpotDirections[1]) );
 	vLightIntensity += SpotlightPhong( 2, vec3(mSpotDirections[2]) );
 	vLightIntensity += SpotlightPhong( 3, vec3(mSpotDirections[3]) );		
 
-	return vec4(vLightIntensity, 1.0);
+	return vLightIntensity;
 }
 
 subroutine( FragmentLightIntensity )
 vec4 Sunlight()
 {		
-	return vec4( Phong( 4, vSunDirection ), 1.0 );
+	return Phong( 4, vSunDirection );
 }
 
 void main()

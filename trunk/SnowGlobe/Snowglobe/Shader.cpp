@@ -136,7 +136,12 @@ bool Shader::LoadShader()
 
 			glGetShaderInfoLog( m_nShaderId, nMaxLineSize, &nErrorLength, sLineBuffer );
 
-			Enforce<AppException>( (nResult == GL_TRUE), string(sLineBuffer) );
+			string sShaderError = m_sShaderFile + string(": ") + string(sLineBuffer);
+			
+			if( nResult == GL_TRUE )
+				AppLog::Ref().LogMsg( sShaderError.c_str() );
+
+			Enforce<AppException>( (nResult == GL_TRUE), sShaderError );
 		}
 
 		bRetVal = true;
