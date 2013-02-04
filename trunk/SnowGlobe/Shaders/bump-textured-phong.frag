@@ -59,17 +59,18 @@ vec4 SpotlightPhong( int n, vec3 vLightDir )
 	float angle			= acos( dot( -vLightDir, lights[n].vDirection ) );
 	float cutoff		= radians( clamp( lights[n].rCutOff, 0.0, 90.0 ) );		
 	
-	if( angle < cutoff )
-	{
-		vec3 ambient	= lights[n].La * material.Ka;
+	vec3 ambient	= lights[n].La * material.Ka;
+
+	if( angle > cutoff )
+	{		
 		vec3 diffuse	= lights[n].Ld * material.Kd * NdotL;
 		vec3 specular	= lights[n].Ls * material.Ks * pow( RdotV, material.rShininess );
 	
-		return vec4(ambient + diffuse + specular, 1.0);
+		return vec4((ambient * diffuse) + specular, 1.0);
 	}
 	else
 	{
-		return vec4(0.0, 0.0, 0.0, 1.0);	
+		return vec4(ambient, 1.0);
 	}
 
 }
