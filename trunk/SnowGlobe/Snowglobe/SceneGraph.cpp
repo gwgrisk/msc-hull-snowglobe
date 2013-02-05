@@ -94,9 +94,9 @@ bool SceneGraph::InitializeGraph()
 		&m_RootNode, 
 		string("terrain"), 
 		g_Cfg.AssetsDir() + string("heightfield4.bmp"),			// height map
-		g_Cfg.AssetsDir() + string("grassC.jpg"),				// texture map (1 of n ?)
+		g_Cfg.AssetsDir() + string("grassc.jpg"),			// texture map (1 of n ?)
 		g_Cfg.AssetsDir() + string("256-circle-alphamap.bmp"),	// alphamap
-		128,128,
+		128, 128,
 		4.0f, 4.0f, 0.1f 
 	);
 
@@ -107,7 +107,9 @@ bool SceneGraph::InitializeGraph()
 	}
 
 	m_map.insert( ActorIdPair( pTerrain->Id(), pTerrain) );
-	tr = translate( mat4(1.0), vec3(0, -275, 0) );
+	tr = translate( mat4(1.0), vec3(0, -275, 0) );	
+	tr = rotate( tr, -20.0f, vec3(0,1,0) );
+
 	pTerrain->GetNodeData().W()	*= tr;	
 	
 	
@@ -231,7 +233,7 @@ bool SceneGraph::InitializeGraph()
 		return false;
 	}
 	
-	tr = translate( mat4(1.0), vec3(0, 313, 45) );		
+	tr = translate( mat4(1.0), vec3(0, 313, 45) );
 	pTree->GetNodeData().W() *= tr;
 
 	m_map.insert( ActorIdPair( pTree->Id(), pTree) );

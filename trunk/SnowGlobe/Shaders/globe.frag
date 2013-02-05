@@ -65,7 +65,7 @@ vec3 SpotlightPhong( int n, vec3 vLightDir )
 
 	if( angle > cutoff )
 	{
-		return (ambient * diffuse) + specular;
+		return (ambient + diffuse) + specular;
 	}	
 	else
 	{

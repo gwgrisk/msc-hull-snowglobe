@@ -253,7 +253,7 @@ bool Terrain::InitializeTextures()
 
 	// load texture
 	if( FileExists( m_sTexture ) )
-		m_texGrass = Texture( m_sTexture.c_str(), false );
+		m_texGrass = Texture( m_sTexture.c_str(), true );
 
 	// load alpha map
 	if( FileExists( m_sAlphaMap ) )

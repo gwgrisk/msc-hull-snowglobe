@@ -35,7 +35,7 @@ static int nFlipIt = 1;
 
 Tree::Tree() :
 	m_bInitialized				( false ),
-	m_CurrentShader				( Smooth ),
+	m_CurrentShader				( BumpTextured ),
 	m_pEffect					( NULL ),
 	m_nSunSub					( 0 ),
 	m_nSpotlightSub				( 0 ),
@@ -52,7 +52,7 @@ Tree::Tree( SceneGraph* pGraph, IGraphNode* pParent, const std::string & sId,
 	m_bInitialized				( false ),	
 	m_sBarkFile					( sBark ),
 	m_sBumpFile					( sBump ),
-	m_CurrentShader				( Smooth ),
+	m_CurrentShader				( BumpTextured ),
 	m_pEffect					( NULL ),
 	m_nSunSub					( 0 ),
 	m_nSpotlightSub				( 0 ),
@@ -203,7 +203,7 @@ void Tree::InitShaderNames()
 	_ShaderNames.push_back(std::string("flat"));
 	_ShaderNames.push_back(std::string("smooth"));
 	_ShaderNames.push_back(std::string("textured-phong"));
-	_ShaderNames.push_back(std::string("bump-textured"));
+	_ShaderNames.push_back(std::string("bump-textured-phong"));
 }
 bool Tree::InitializeMtl()
 {
@@ -359,7 +359,7 @@ bool Tree::SetShaderArgs()
 		return false;
 	
 	// Select Shader
-	glUseProgram( m_pEffect->Id() );	
+	glUseProgram( m_pEffect->Id() );
 
 	// bind buffers
 	glBindVertexArray( m_nVaoId );
@@ -564,6 +564,13 @@ void Tree::RenderSegment( Segment* pSeg )
 	m_pEffect->AssignUniformMat4( string("mModelView"),		mModelView );
 	m_pEffect->AssignUniformMat3( string("mNormal"),		mNormal );
 	m_pEffect->AssignUniformMat4( string("mMVP"),			mMVP );
+
+	// textures
+	if( m_CurrentShader != eTreeShader::WireFrame )
+	{
+		m_pEffect->AssignUniformSampler2D( string("tex"),		m_texBark.TextureId() );
+		m_pEffect->AssignUniformSampler2D( string("texBump"),	m_texBump.TextureId() );
+	}
 				
 	glDrawElements(
 		GL_TRIANGLE_STRIP,
@@ -615,7 +622,7 @@ HRESULT Tree::PreRender()
 	if( ! m_pEffect )
 		return E_POINTER;
 
-	SetShaderArgs();	
+	SetShaderArgs();
 
 	switch( m_CurrentShader )
 	{
@@ -624,8 +631,8 @@ HRESULT Tree::PreRender()
 		break;
 
 	case Flat:		
-		glShadeModel(GL_FLAT);
-		glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+		//glShadeModel(GL_FLAT);
+		//glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 		break;
 
 	case Smooth:

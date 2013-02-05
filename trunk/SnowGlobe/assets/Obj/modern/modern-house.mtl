@@ -1,0 +1,244 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 23.04.2012 09:21:28
+
+newmtl Tejado
+	Ns 5.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.1647 0.1647 0.1843
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006TB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006TB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006Mrc
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.8824 0.8431 0.7569
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006MB2
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.4431 0.3020 0.2588
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006MA.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006MA.JPG
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006Lad
+	Ns 20.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.2863 0.2157 0.1804
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006BRI.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006BRI.JPG
+	map_bump C:\Work\Models\Modern-Home-House\D9006BRB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006BRB.JPG
+
+newmtl D9006MW
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.7686 0.7725 0.6980
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl Material__6
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.6980 0.6980 0.6980
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006MR.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006MR.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006Gla
+	Ns 100.0000
+	Ni 1.5000
+	d 0.4000
+	Tr 0.6000
+	Tf 0.4000 0.4000 0.4000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0510 0.1961 0.0039
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl MadMarc
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.8824 0.8431 0.7569
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006MR
+	Ns 80.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.6980 0.6980 0.6980
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006MR.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006MR.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl D9006GS
+	Ns 40.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.3490 0.3294 0.3137
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+
+newmtl D9006Pom
+	Ns 80.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.6588 0.5647 0.1882
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl Marco
+	Ns 100.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0549 0.0510 0.0471
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006M2.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006M2.JPG
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl Shutter
+	Ns 100.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0549 0.0510 0.0471
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006RG.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006RG.JPG
+	map_bump C:\Work\Models\Modern-Home-House\D9006RGB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006RGB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl Marc
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.8745 0.8353 0.7529
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl MaderaBl
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.9294 0.9098 0.8667
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Work\Models\Modern-Home-House\D9006MA.JPG
+	map_Kd C:\Work\Models\Modern-Home-House\D9006MA.JPG
+	map_bump C:\Work\Models\Modern-Home-House\D9006W.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006W.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG
+
+newmtl MadLines
+	Ns 70.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.5725 0.5804 0.5216
+	Ks 0.0500 0.0500 0.0500
+	Ke 0.0000 0.0000 0.0000
+	map_bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	bump C:\Work\Models\Modern-Home-House\D9006MB.JPG
+	map_refl C:\Work\Models\Modern-Home-House\LAKEREF.JPG

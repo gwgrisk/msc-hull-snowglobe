@@ -77,6 +77,11 @@ vec4 SpotlightPhong( int n, vec3 vLightDir )
 
 vec4 Phong( int n, vec3 vLightDir )
 {
+	// we translate the terrain to -275.0 in the y direction when the scenegraph is created.
+	// so if the "sun sets", we provide no light to the object
+	if( lights[n].Position.y < -275.0f )
+		return vec4(0, 0, 0, 1);
+
 	vec3 vTexNormal		= normalize( ( texture2D(texBump, TexCoord).xyz * 2.0 ) - 1.0 );
 	float NdotL			= max( 0.0, dot( vTexNormal, vLightDir ));
 
