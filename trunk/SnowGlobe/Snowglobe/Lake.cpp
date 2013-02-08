@@ -232,10 +232,10 @@ bool Lake::InitializeMaterial()
 
 	using glm::vec3;
 
-	m_material.Ka(vec3(0.2, 0.2, 0.5));
-	m_material.Kd(vec3(0.5, 0.5, 0.8));
-	m_material.Ks(vec3(0.1, 0.1, 0.4));
-	m_material.Shininess( 4.0f );
+	m_material.Ka(vec3(0.1, 0.1, 0.3));
+	m_material.Kd(vec3(0.1, 0.1, 0.3));
+	m_material.Ks(vec3(0.1, 0.1, 0.3));
+	m_material.Shininess( 32.0f );
 
 	return true;
 }
@@ -372,7 +372,11 @@ bool Lake::GetShader()
 	if( EffectMgr::Ref().Find( string("lake"), &m_pEffect ) )
 	{
 		if( m_pEffect->BuildState() == Effect::EffectBuildState::Linked )
+		{
+			m_nSunSub	= glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Sunlight" );
+			m_nSpotsSub = glGetSubroutineIndex( m_pEffect->Id(), GL_FRAGMENT_SHADER, "Spotlights" );
 			return true;
+		}
 	}
 #pragma warning (pop)
 
@@ -388,7 +392,17 @@ void Lake::SetUniforms()
 	using namespace glm;
 	using namespace AntiMatter;
 	using namespace std;
+
+	// Indicate which ShaderProgram to use
+	glUseProgram( m_pEffect->Id() );
+
+	// indicate which lighting subroutine to use in the shader
+	if( m_pGraph->Lights().GetLightsState() == SceneLights::LightsState::sun )
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSunSub );
+	else
+		glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &m_nSpotsSub );
 	
+	// uniforms
 	m_pEffect->AssignUniformFloat(	string("rSimTime"),			SeasonalTimeline::Ref().SeasonTimeline() );	
 	m_pEffect->AssignUniformInt(	string("nNumLights"),		4 );
 

@@ -43,6 +43,9 @@ private:
 	float					m_rWidth;		// dimensions of the lake's plane _before_ shaping
 	float					m_rHeight;
 
+	GLuint					m_nSunSub;
+	GLuint					m_nSpotsSub;
+
 	int						m_nNumWaves;
 	std::vector<float>		m_rAmplitude;
 	std::vector<float>		m_rWavelength;

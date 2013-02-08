@@ -10,54 +10,33 @@
   <Class Name="CustomVertex" Collapsed="true">
     <Position X="13.25" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAADAAAAAAAAAAAAAAAAQAAAQAAAAAAEAABAA=</HashCode>
+      <HashCode>AAAAAAAAADAAAAAAAAAAAAAAAAQAAAQAAAAgAEAABAA=</HashCode>
       <FileName>VertexClass.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Shader" Collapsed="true">
-    <Position X="4" Y="5.5" Width="1.5" />
+    <Position X="3.75" Y="6" Width="1.5" />
     <TypeIdentifier>
       <HashCode>QIAAEACAAAAAAQAAAAAAAAAAkAAAAAAABEAgAAAAAAg=</HashCode>
       <FileName>Shader.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="ShaderDesc" Collapsed="true">
-    <Position X="6.25" Y="5.5" Width="1.5" />
+    <Position X="5.5" Y="4" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAIAAAA=</HashCode>
       <FileName>ShaderDesc.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="ShaderProgram" Collapsed="true">
-    <Position X="6.25" Y="7" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAQAEACAAAYAgQEgAAAAAABAEAAAAAAUGAAhBBBQiAg=</HashCode>
-      <FileName>ShaderProgram.h</FileName>
-    </TypeIdentifier>
-  </Class>
-  <Class Name="VertexBufferObject" Collapsed="true">
-    <Position X="0.5" Y="4.5" Width="1.75" />
-    <TypeIdentifier>
-      <HashCode>AAAAEACgAAQAAwEAAAAAAACAkAAAAAAACAIgBABBgII=</HashCode>
-      <FileName>VertexBufferObject.h</FileName>
-    </TypeIdentifier>
-  </Class>
-  <Class Name="FrameBufferObject" Collapsed="true">
-    <Position X="0.5" Y="5.25" Width="1.75" />
-    <TypeIdentifier>
-      <HashCode>QAAAAQCCAAAAAUgAAAAEAAAAEAAAAAgAQAAAAAACgAg=</HashCode>
-      <FileName>FrameBufferObject.h</FileName>
-    </TypeIdentifier>
-  </Class>
   <Class Name="Material" Collapsed="true">
-    <Position X="14" Y="2.25" Width="1.5" />
+    <Position X="1.5" Y="6.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AEQIAAEAgQAEAAAAAAAAAAQAQACYACUAEAAIBAABAAA=</HashCode>
       <FileName>Material.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Texture" Collapsed="true">
-    <Position X="14" Y="1.5" Width="1.5" />
+    <Position X="1.5" Y="6" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAEEAAABIAAgAAAAAAAAEAAEAAABAAAAGMkQAAAABg=</HashCode>
       <FileName>Texture.h</FileName>
@@ -102,33 +81,33 @@
     </TypeIdentifier>
   </Class>
   <Class Name="House" Collapsed="true">
-    <Position X="8.5" Y="5.75" Width="1.5" />
+    <Position X="8.5" Y="4.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AgQgEAAAAAABAUAAAGAAMhACEEAQQECAABLgAEACAIg=</HashCode>
+      <HashCode>AgYgEAAAARABgQAAAGAAMoACEEASZMCAABLgAAACAIg=</HashCode>
       <FileName>House.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Snow" Collapsed="true">
-    <Position X="8.5" Y="3.75" Width="1.5" />
+    <Position X="8.5" Y="2.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>gAwAEBABAQKggUAEAHAAAIICFAAgAEAAWBCgAAATCQg=</HashCode>
       <FileName>Snow.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Tree" Collapsed="true">
-    <Position X="8.5" Y="7.75" Width="1.5" />
+    <Position X="11" Y="5.75" Width="1.5" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
     <TypeIdentifier>
-      <HashCode>AAQJFhAAAgCAQQgEAEQBICQAEAgCAMAAIBAgQALCCAg=</HashCode>
+      <HashCode>AUQIFhAAAgCAwUgEAEQBoCAAEEgKAMAAIBBgSgJCCAg=</HashCode>
       <FileName>Tree.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Terrain" Collapsed="true">
-    <Position X="8.5" Y="4.75" Width="1.5" />
+    <Position X="8.5" Y="3.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>IAQAFAQhAIAAE0AAAEgCAAAAEEAAJMCBAFBgAAiCAhg=</HashCode>
+      <HashCode>IAQAFAQhAIAAk0AAAEgCAAAAEEAKJMCAIFBgAAjCAhg=</HashCode>
       <FileName>Terrain.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -147,23 +126,23 @@
     </TypeIdentifier>
   </Class>
   <Class Name="Light" Collapsed="true">
-    <Position X="8.5" Y="6.75" Width="1.5" />
+    <Position X="8.5" Y="5.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEQAJAgCCCAAgUAgAGAAAhAIAACKAuQAIRBgAABCAEg=</HashCode>
+      <HashCode>AEQAJAgCACAAgUAgAGAAAhCAABCKAuQAMRBgAABCAEg=</HashCode>
       <FileName>Light.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="SceneLights" Collapsed="true">
     <Position X="6" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAIUAAAAAAAAQAAAAAAEwAAEAAAEAiAAgCAAABAAAA=</HashCode>
+      <HashCode>AAAIUAAAAAAAAQAAAAAAEwAgEAAAEAiAAgCAIABAAgA=</HashCode>
       <FileName>SceneLights.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="KeyData" Collapsed="true">
     <Position X="0.75" Y="2" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AQEAADIAAYEABAgAAAQAAAACCAREAAAAWoSAAAAAAAI=</HashCode>
+      <HashCode>AQEiADIQAYEABAiAP2QAAAgGCgREAAkCWoSAgAQBAAI=</HashCode>
       <FileName>InputMgr.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -182,27 +161,17 @@
     </TypeIdentifier>
   </Class>
   <Class Name="LSystem" Collapsed="true">
-    <Position X="6.25" Y="1.75" Width="1.5" />
+    <Position X="11.5" Y="7.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AgAIEAABAiABAQACQgIAAAAAEIQAIAAECEogBABAIAg=</HashCode>
+      <HashCode>AgAIEAABAiABAQACQgIAAAAAEIUAIAAECEogBABAIAg=</HashCode>
       <FileName>LSystem.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Segment" Collapsed="true">
-    <Position X="6.25" Y="3.25" Width="1.5" />
+    <Position X="11.5" Y="6.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>EAQAAAgAIQAAESAAEAMAQAFEAACAAAgIAoQwAAAAARA=</HashCode>
+      <HashCode>EAQAQAkAIQAIEwAQEAMAQAFEAAGAAABIAgQwAAAAARA=</HashCode>
       <FileName>Segment.h</FileName>
-    </TypeIdentifier>
-  </Class>
-  <Class Name="TreeShaderz" Collapsed="true">
-    <Position X="6.25" Y="2.5" Width="1.5" />
-    <Compartments>
-      <Compartment Name="Nested Types" Collapsed="false" />
-    </Compartments>
-    <TypeIdentifier>
-      <HashCode>gAIAEgAAAAAAAQAAAAIAAAAAEAAABAAAAAAAAABAgAg=</HashCode>
-      <FileName>TreeShaderz.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Lightning" Collapsed="true">
@@ -229,7 +198,7 @@
   <Class Name="IGraphNode" Collapsed="true">
     <Position X="9.75" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>QAcCAAAAAAAAMAAAAMQAQAAAgAAAAEiAAFAAAAACAgA=</HashCode>
+      <HashCode>QAcCAAAAAAAAMAAAAMQAQEAAgAAAAEiAAFAAAAACAgA=</HashCode>
       <FileName>IGraphNode.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -241,63 +210,63 @@
     </TypeIdentifier>
   </Class>
   <Class Name="Vbo&lt;T&gt;" Collapsed="true">
-    <Position X="0.5" Y="6" Width="1.5" />
+    <Position X="1.5" Y="5.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>ABACkAAACAQAAQAAAABAAACAkAAAAAAACAIkBABAAIo=</HashCode>
       <FileName>Vbo.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="Effect" Collapsed="true">
-    <Position X="4" Y="4.75" Width="1.5" />
+    <Position X="3.75" Y="5.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>BAQiEACAASoAgQAQEAAAAAQQEAAAgAAAGBAwQgBQKAg=</HashCode>
       <FileName>Effect.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="EffectMgr" Collapsed="true">
-    <Position X="6.25" Y="4.25" Width="1.5" />
+    <Position X="3.75" Y="4.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAIAECAAIAAAAQAAAAAAAAAAEAAIAAAAAACgAAgAAAg=</HashCode>
       <FileName>EffectMgr.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="ShaderInputAttribute" Collapsed="true">
-    <Position X="6" Y="6.25" Width="1.75" />
+    <Position X="5.5" Y="4.75" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAABAAAACAAA=</HashCode>
       <FileName>ShaderInputAttribute.h</FileName>
     </TypeIdentifier>
   </Class>
   <Typedef Name="LItr" Collapsed="true">
-    <Position X="10.25" Y="12" Width="1.5" />
+    <Position X="8" Y="11.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SceneLights.cpp</FileName>
     </TypeIdentifier>
   </Typedef>
   <Typedef Name="NItr" Collapsed="true">
-    <Position X="12" Y="12" Width="1.5" />
+    <Position X="9.75" Y="11.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>IGraphNode.h</FileName>
     </TypeIdentifier>
   </Typedef>
   <Typedef Name="ActorMap" Collapsed="true">
-    <Position X="5" Y="12" Width="1.5" />
+    <Position X="2.75" Y="11.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SceneGraph.h</FileName>
     </TypeIdentifier>
   </Typedef>
   <Typedef Name="ActorIdPair" Collapsed="true">
-    <Position X="3.25" Y="12" Width="1.5" />
+    <Position X="1" Y="11.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SceneGraph.h</FileName>
     </TypeIdentifier>
   </Typedef>
   <Typedef Name="AItr" Collapsed="true">
-    <Position X="6.75" Y="12" Width="1.5" />
+    <Position X="4.5" Y="11.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>SceneGraph.h</FileName>
@@ -311,45 +280,38 @@
     </TypeIdentifier>
   </Enum>
   <Enum Name="HouseAssets" Collapsed="true">
-    <Position X="2.75" Y="10.25" Width="1.5" />
+    <Position X="2.75" Y="11" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAQAAACAAAAQAAAAAAAAAAAAAAAgAAAQAAAAAA=</HashCode>
       <FileName>House.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="HouseWalls" Collapsed="true">
-    <Position X="9.75" Y="10.25" Width="1.5" />
+    <Position X="9.75" Y="11" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAEEAABAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAgAA=</HashCode>
       <FileName>House.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="HouseRoofSlopes" Collapsed="true">
-    <Position X="8" Y="10.25" Width="1.5" />
+    <Position X="8" Y="11" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAgAAAAAAAAAABAAAAAABAAAAAAAAAAAAAAA=</HashCode>
       <FileName>House.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="HouseRoofSides" Collapsed="true">
-    <Position X="6.25" Y="10.25" Width="1.5" />
+    <Position X="6.25" Y="11" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAEAAAAAAAAAAABAACAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>House.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="HouseParts" Collapsed="true">
-    <Position X="4.5" Y="10.25" Width="1.5" />
+    <Position X="4.5" Y="11" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAQAAAgABAAEAAgAADAAAAAAAAAAAACAAAABAAA=</HashCode>
       <FileName>House.h</FileName>
-    </TypeIdentifier>
-  </Enum>
-  <Enum Name="eTreeShaders" Collapsed="true">
-    <Position X="1" Y="10.25" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>IAAAAAAAABCAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
-      <FileName>TreeShaderz.h</FileName>
     </TypeIdentifier>
   </Enum>
   <Font Name="Segoe UI" Size="9" />

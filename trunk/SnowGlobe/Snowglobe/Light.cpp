@@ -151,7 +151,9 @@ void Light::Initialize()
 	{
 		AppLog::Ref().LogMsg("%s initialize vertex colours failed for globe object", __FUNCTION__ );
 		return;
-	}			
+	}
+
+	InitializePosition();
 }
 void Light::Uninitialize()
 {
@@ -247,24 +249,27 @@ bool Light::InitializePosition()
 	using glm::translate;
 	using glm::vec3;
 
-	bool bInitialLightPosSet = false;
+	static bool bInitialLightPosSet = false;
 
 	// initialize sphere position
-	if( m_Sphere.Initialized() && ! bInitialLightPosSet && m_pParent )
-	{			
-		mat4 tr			= translate( mat4(1.0), vec3(m_vPosition) );
-		m_Data.W()		= tr;
+	if( ! bInitialLightPosSet )
+	{
+		if( m_Sphere.Initialized() && m_pParent )
+		{
+			mat4 tr			= translate( mat4(1.0), vec3(m_vPosition) );
+			m_Data.W()		= tr;
 
-		m_Data.Stack()	= m_Data.W();
+			m_Data.Stack()	= m_Data.W();
 
-		m_Data.MVP() =	
-			m_pGraph->Proj().P() * 
-			m_pGraph->Cam().V() * 
-			m_Data.Stack();		
+			m_Data.MVP() =	
+				m_pGraph->Proj().P() * 
+				m_pGraph->Cam().V() * 
+				m_Data.Stack();
 
-		bInitialLightPosSet = true;
+			bInitialLightPosSet = true;
+		}
 	}
-
+	
 	return bInitialLightPosSet;
 }
 bool Light::SetPerVertexColour()
@@ -414,7 +419,7 @@ HRESULT Light::Update( const float & rSecsDelta )
 		static float	rAngle = 0.0f;
 		float			rSpeed = SeasonalTimeline::Ref().Speed();
 
-		rAngle = rSecsDelta * 30.0f * rSpeed;
+		rAngle = ( rSecsDelta * 30.0f * rSpeed );
 
 		// initialize sphere position
 		if( m_Sphere.Initialized() )

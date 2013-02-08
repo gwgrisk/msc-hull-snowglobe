@@ -50,10 +50,7 @@ void main()
 	// transform vertex position and normal into view space for Phong lighting calculation
 	
 	// Get vertex normal, View direction and Light direction in view space
-	vVertexPos = vec3(mModelView * vec4( VertexPosition, 1.0 ));
-	vec3 vLightPos;
-	vec3 vLightDir;
-	
+	vVertexPos		= vec3(mModelView * vec4( VertexPosition, 1.0 ));		
 	vVertexNormal	= normalize( mNormal * VertexNormal );
 	vViewDirection	= normalize( vViewPosition - vVertexPos );
 	vSunDirection   = normalize( vec3(lights[4].Position) - vVertexPos );
@@ -61,14 +58,14 @@ void main()
 	// compute the light direction for each spotlight, store in the mSpotDirections matrix ;)
 	for(int n = 0; n < 4; n ++ )
 	{
-		vLightPos			= vec3( lights[n].Position );
-		vLightDir			= normalize( vLightPos - vVertexPos );
+		vec3 vLightPos		= vec3( lights[n].Position );
+		vec3 vLightDir		= normalize( vLightPos - vVertexPos );
 		mSpotDirections[n]	= vec4(vLightDir, 0.0);		
 	}
 
 	// pass texture coord into the fragment shader
 	TexCoord = VertexTexCoord;
 
-	// all vertex shaders must set the vertex position
+	// vertex shader must set the vertex position
 	gl_Position = mMVP * vec4(VertexPosition, 1.0);
 }

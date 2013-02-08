@@ -89,7 +89,14 @@ bool Texture::CreateTexture( void* pTextureData )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_nMinFilter );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_nMagFilter );
 
-	glBindTexture( GL_TEXTURE_2D, 0 );
+	// wrap the texture
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );	
+
+	// build 2d mip maps
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4 );
+	gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGBA, m_nX, m_nY, GL_RGBA, GL_UNSIGNED_BYTE, pTextureData );
 
 	return true;
 }
@@ -118,14 +125,19 @@ bool Texture::LoadToGfxMem( bool bWrap )
 	m_nY	= img.Height();
 		
 	glGenTextures( 1, &m_nTextureId );
+	if( m_nTextureId == 0xffffffff )
+		return false;
+
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, m_nTextureId );
 	
 	// wrap or clamp the texture
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, bWrap ? GL_REPEAT : GL_CLAMP );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, bWrap ? GL_REPEAT : GL_CLAMP );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, bWrap ? GL_REPEAT : GL_CLAMP );	
 
 	// build 2d mip maps
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m_nMinFilter );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_nMagFilter );
 
