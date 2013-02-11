@@ -2,7 +2,7 @@
 #pragma once
 
 #include <AntiMatter\Singleton.h>
-#include <fstream>
+#include <iosfwd>
 
 class SeasonalTimeline : public Singleton <SeasonalTimeline>
 {

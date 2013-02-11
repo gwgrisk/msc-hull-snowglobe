@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Snowglobe", "Snowglobe\Snowglobe.vcxproj", "{C382D317-7158-4697-BBC9-A688466D6A98}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A97FE11B-7121-4806-8D7E-04B76DAD4DE8} = {A97FE11B-7121-4806-8D7E-04B76DAD4DE8}
@@ -11,8 +11,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3pLibs", "3pLibs", "{38934096-FC38-42F6-9B69-4510DE7F4FA1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TiCPP", "3pSDK\TinyXml\ticpp\TiCPP.vcxproj", "{9599ADA9-EBB9-1B43-A480-00052496734D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gxbase", "3pSDK\gxbase_R737_source\gxbase.vcxproj", "{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,20 +44,11 @@ Global
 		{9599ADA9-EBB9-1B43-A480-00052496734D}.Release Multithreaded DLL|Win32.Build.0 = Release|Win32
 		{9599ADA9-EBB9-1B43-A480-00052496734D}.Release|Win32.ActiveCfg = Release|Win32
 		{9599ADA9-EBB9-1B43-A480-00052496734D}.Release|Win32.Build.0 = Release|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Debug Multithreaded DLL|Win32.ActiveCfg = Debug Multithreaded DLL|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Debug Multithreaded DLL|Win32.Build.0 = Debug Multithreaded DLL|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Debug|Win32.ActiveCfg = Debug|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Debug|Win32.Build.0 = Debug|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Release Multithreaded DLL|Win32.ActiveCfg = Release Multithreaded DLL|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Release Multithreaded DLL|Win32.Build.0 = Release Multithreaded DLL|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Release|Win32.ActiveCfg = Release|Win32
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9599ADA9-EBB9-1B43-A480-00052496734D} = {38934096-FC38-42F6-9B69-4510DE7F4FA1}
-		{42ED9BC3-214B-4AE1-989F-E9C6A24584B0} = {38934096-FC38-42F6-9B69-4510DE7F4FA1}
 	EndGlobalSection
 EndGlobal

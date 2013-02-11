@@ -20,7 +20,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -56,7 +56,7 @@
 del ..\include\AntiMatter\stdafx.h
 del ..\include\AntiMatter\targetver.h
 
-rem copy $(SolutionDir)$(Configuration)\*.lib $(SolutionDir)lib\</Command>
+copy "$(SolutionDir)$(Configuration)\*.lib" "$(SolutionDir)lib\"</Command>
       <Message>copying library to shared folders..</Message>
     </PostBuildEvent>
     <Lib>
